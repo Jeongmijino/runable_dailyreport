@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>러너블 · 광고운영</title>
+<style>
+:root {
+  --sb:#0f1117; --sb-text:#8b8fa8; --sb-hover:rgba(255,255,255,.05); --sb-on:rgba(255,255,255,.08);
+  --bg:#f5f6fa; --surf:#fff; --bdr:#e8eaf0; --bdr2:#d0d3de;
+  --t1:#1a1d2e; --t2:#6b7080; --t3:#a8acbe;
+  --blu:#3b5bdb; --blu-bg:#eef2ff; --blu-bdr:#bac8ff;
+  --pnk:#c2255c; --pnk-bg:#fff0f6; --pnk-bdr:#fcc2d7;
+  --grn:#2f9e44; --grn-bg:#ebfbee;
+  --amb:#e67700; --amb-bg:#fff9db;
+  --r:8px; --fn:'Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--t1);font-size:13px}
+.app{display:grid;grid-template-columns:200px 1fr;height:100vh;overflow:hidden}
+.sb{background:var(--sb);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.main{overflow-y:auto}
+.sb-logo{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-brand{font-size:14px;font-weight:800;color:#fff;letter-spacing:.04em}
+.sb-sub{font-size:10px;color:var(--sb-text);margin-top:2px;letter-spacing:.06em;text-transform:uppercase}
+.sb-sec{padding:20px 16px 6px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25)}
+.sbi{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:6px;margin:1px 8px;font-size:12px;font-weight:500;color:var(--sb-text);cursor:pointer;border:none;background:none;width:calc(100% - 16px);text-align:left;transition:all .12s}
+.sbi:hover{background:var(--sb-hover);color:#fff}
+.sbi.on{background:var(--sb-on);color:#fff}
+.sbi .ct{margin-left:auto;font-size:9px;font-weight:700;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:20px;padding:1px 7px}
+.sbi.on .ct{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+.sb-div{height:1px;background:rgba(255,255,255,.06);margin:8px 12px}
+.sb-bottom{margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,.06)}
+.sb-date{font-size:10px;color:rgba(255,255,255,.3);line-height:1.7}
+.sb-sync{font-size:9px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#2f9e44}
+.sync-dot.off{background:#e67700}
+.ph{padding:24px 28px 0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.ph-l .ey{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px}
+.ph-l .pt{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.ph-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.srch{position:relative}
+.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:13px;pointer-events:none}
+.srch input{width:220px;height:34px;padding:0 10px 0 30px;border:1px solid var(--bdr2);border-radius:var(--r);font-family:var(--fn);font-size:12px;background:var(--surf);color:var(--t1)}
+.srch input:focus{outline:none;border-color:var(--blu);box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+.srch-drop{position:absolute;top:calc(100% + 5px);left:0;right:0;background:var(--surf);border:1px solid var(--bdr2);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:200;max-height:300px;overflow-y:auto;display:none}
+.srch-drop.open{display:block}
+.sri{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.sri:last-child{border-bottom:none}
+.sri:hover{background:var(--bg)}
+.sri-name{font-size:12px;font-weight:600}
+.sri-meta{font-size:10px;color:var(--t3);margin-top:1px}
+.btn{font-family:var(--fn);font-size:12px;font-weight:600;padding:0 14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--bdr2);background:var(--surf);color:var(--t1);white-space:nowrap;height:34px;display:inline-flex;align-items:center;gap:6px;transition:all .12s}
+.btn:hover{background:var(--bg)}
+.btn-p{background:var(--blu);color:#fff;border-color:var(--blu)}
+.btn-p:hover{background:#2f4cc4}
+.btn-sm{height:28px;font-size:11px;padding:0 10px}
+.btn-icon{background:none;border:1px solid var(--bdr);border-radius:var(--r);width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--t2);transition:all .12s}
+.btn-icon:hover{background:var(--bg)}
+.btn-icon.del:hover{background:var(--pnk-bg);color:var(--pnk);border-color:var(--pnk-bdr)}
+.mrow{padding:0 28px;display:flex;gap:4px;overflow-x:auto;margin-bottom:16px}
+.mrow::-webkit-scrollbar{height:2px}
+.mc{padding:5px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--surf);font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s}
+.mc.on{background:var(--t1);color:#fff;border-color:var(--t1)}
+.mc:hover:not(.on){border-color:var(--bdr2);background:var(--bg)}
+.frow{padding:0 28px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fsel{font-family:var(--fn);font-size:11px;padding:0 8px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);height:30px;cursor:pointer}
+.fsel:focus{outline:none;border-color:var(--blu)}
+.krow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;padding:0 28px 16px}
+.kpi{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
+.kpi.blue::after{background:var(--blu)}.kpi.pink::after{background:var(--pnk)}.kpi.gray::after{background:var(--t3)}
+.kl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.kv{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.ks{font-size:10px;color:var(--t3);margin-top:4px}
+.kpi.blue .kv{color:var(--blu)}.kpi.pink .kv{color:var(--pnk)}
+.pad{padding:0 28px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.ccard{padding:14px 18px;border-bottom:1px solid var(--bdr);cursor:pointer;display:flex;align-items:center;gap:14px;transition:background .1s}
+.ccard:last-child{border-bottom:none}
+.ccard:hover{background:#fafbff}
+.ccard.sel{background:var(--blu-bg)}
+.cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cdot.on{background:var(--grn)}.cdot.off{background:var(--t3)}
+.cbody{flex:1;min-width:0}
+.cname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.cmeta{font-size:10px;color:var(--t3);display:flex;gap:10px;flex-wrap:wrap}
+.cstats{display:flex;gap:16px;text-align:right;flex-shrink:0}
+.cs{display:flex;flex-direction:column;gap:1px}
+.csv{font-size:13px;font-weight:700;color:var(--blu)}
+.csl{font-size:9px;color:var(--t3)}
+.chip{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.cb{background:var(--blu-bg);color:var(--blu)}.cg{background:var(--grn-bg);color:var(--grn)}.cx{background:var(--bg);color:var(--t2)}
+.empty{text-align:center;padding:48px 20px;color:var(--t3)}
+.rnav{padding:18px 28px 0;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.rback{font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:4px;background:none;border:1px solid var(--bdr);border-radius:var(--r);padding:5px 10px}
+.rback:hover{background:var(--bg)}
+.rcrumb{font-size:11px;color:var(--t3)}
+.scard{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:18px 20px;margin:0 28px 16px}
+.sh{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.fld{display:flex;flex-direction:column;gap:3px}
+.fld label{font-size:10px;font-weight:700;color:var(--t2)}
+.fld input,.fld select{font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px}
+.fld input:focus,.fld select:focus{outline:none;border-color:var(--blu)}
+.hr{height:1px;background:var(--bdr);margin:14px 0}
+.pchips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.pch{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--bdr);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600}
+.pch .x{cursor:pointer;color:var(--t3);font-size:12px;line-height:1}
+.pch .x:hover{color:var(--pnk)}
+.rh{padding:12px 28px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.rh-title{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.rh-chips{display:flex;gap:5px;flex-wrap:wrap}
+.tbar{padding:0 28px;display:flex;border-bottom:1px solid var(--bdr);margin-bottom:14px;overflow-x:auto}
+.rtab{font-family:var(--fn);font-size:12px;font-weight:600;padding:8px 16px;border:none;background:none;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .12s}
+.rtab.on{color:var(--blu);border-bottom-color:var(--blu)}
+.rtab:hover{color:var(--t1)}
+.agdf{padding:10px 28px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surf);border-bottom:1px solid var(--bdr)}
+.agdf label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+.agdf input{font-family:var(--fn);font-size:12px;padding:0 8px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);height:30px}
+.agdf input:focus{outline:none;border-color:var(--blu)}
+.tw{margin:0 28px 24px;border:1px solid var(--bdr);border-radius:10px;background:var(--surf);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:440px}
+thead tr.grp th{padding:8px 0;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--bdr);text-align:center}
+thead tr.grp th.dg{background:#f0f4ff;color:var(--blu)}
+thead tr.grp th.rg{background:#fff0f6;color:var(--pnk)}
+thead tr.grp th.bg{background:#fafbfc;color:var(--t3)}
+thead tr.cols th{padding:8px 10px;font-size:10px;font-weight:700;color:var(--t2);border-bottom:2px solid var(--bdr);white-space:nowrap;background:#fafbfc}
+thead tr.cols th.dc{background:#f4f7ff;color:var(--blu);text-align:center}
+thead tr.cols th.rc{background:#fff5f9;color:var(--pnk);text-align:center}
+thead tr.cols th.bc{text-align:left}
+tbody tr{border-bottom:1px solid var(--bdr)}
+tbody tr:last-child{border-bottom:none}
+tbody tr.we td{background:#fafbfc}
+tbody tr:hover td{background:#f8f9fe!important}
+tbody td{height:38px;padding:0;vertical-align:middle}
+.ci{padding:0 10px;height:100%;display:flex;align-items:center}
+.ci.c{justify-content:center}
+td.dc{background:#f7f9ff}
+td.rc{background:#fff7fb}
+.ni{font-family:var(--fn);font-size:12px;width:100%;height:100%;border:none;background:transparent;color:var(--t1);text-align:center;padding:0;outline:none;-moz-appearance:textfield}
+.ni::-webkit-outer-spin-button,.ni::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ni:focus{background:#fffde8;border-radius:3px}
+td.dc .ni{color:var(--blu)}
+td.rc .ni{color:var(--pnk)}
+.ni.auto{opacity:.55}
+tr.sumr td{background:var(--t1)!important;height:40px}
+tr.sumr td .ci{color:#fff;font-weight:700;justify-content:center}
+tr.sumr td.dc .ci{color:#bac8ff}
+tr.sumr td.rc .ci{color:#fcc2d7}
+.dow{font-size:9px;color:var(--t3);margin-left:4px}
+.cpill{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;background:var(--amb-bg);color:var(--amb)}
+.mvg{display:flex;flex-direction:column;gap:16px;padding:0 28px 32px}
+.mvt{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.mvcard{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
+.mvcard table{width:100%;border-collapse:collapse;font-size:12px}
+.mvcard thead th{padding:9px 14px;font-size:10px;font-weight:700;color:var(--t2);border-bottom:2px solid var(--bdr);background:#fafbfc;text-align:left}
+.mvcard thead th.r{text-align:right}
+.mvcard tbody td{padding:9px 14px;border-bottom:1px solid var(--bdr);font-variant-numeric:tabular-nums}
+.mvcard tbody td.r{text-align:right}
+.mvcard tbody tr:last-child td{border-bottom:none}
+.mvcard tbody tr:hover td{background:var(--bg)}
+.mvcard tr.sumr td{background:var(--t1)!important;color:#fff;font-weight:700}
+.stg{padding:0 28px 40px}
+.stg-sec{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:20px 22px;margin-bottom:16px}
+.stg-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.stg-sub{font-size:11px;color:var(--t2);margin-bottom:16px}
+.thr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.thr-row{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 12px}
+.thr-name{flex:1;font-size:12px;font-weight:600;color:var(--t1)}
+.thr-inp{font-family:var(--fn);font-size:13px;font-weight:700;width:64px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:5px;text-align:center;color:var(--blu);background:#fff;-moz-appearance:textfield}
+.thr-inp::-webkit-outer-spin-button,.thr-inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.thr-inp:focus{outline:none;border-color:var(--blu)}
+.thr-pct{font-size:11px;color:var(--t2);font-weight:600}
+.thr-add{display:flex;gap:8px;margin-top:12px;align-items:center}
+.thr-add input{font-family:var(--fn);font-size:12px;padding:0 9px;border:1px solid var(--bdr2);border-radius:var(--r);height:30px}
+/* token list */
+.token-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:7px}
+.token-camp{flex:1;min-width:0}
+.token-camp-name{font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.token-camp-meta{font-size:10px;color:var(--t3);margin-top:1px}
+.token-code{font-family:monospace;font-size:13px;font-weight:700;color:var(--blu);background:var(--blu-bg);border:1px solid var(--blu-bdr);border-radius:5px;padding:4px 10px;white-space:nowrap}
+.token-code.empty{color:var(--t3);background:var(--bg);border-color:var(--bdr);font-family:var(--fn);font-size:11px}
+.token-actions{display:flex;gap:5px;flex-shrink:0}
+.ovl{display:none;position:fixed;inset:0;background:rgba(15,17,23,.5);z-index:100;align-items:center;justify-content:center}
+.ovl.open{display:flex}
+.modal{background:var(--surf);border-radius:12px;padding:24px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--t2);margin-bottom:18px}
+.mfld{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.mfld label{font-size:10px;font-weight:700;color:var(--t2)}
+.mfld input{font-family:var(--fn);font-size:13px;padding:8px 10px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:36px}
+.mfld input:focus{outline:none;border-color:var(--blu)}
+.mfr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mac{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid var(--bdr)}
+.urlbox{background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 12px;font-size:11px;word-break:break-all;color:var(--t2);margin-bottom:12px;font-family:monospace;line-height:1.6}
+.agb{background:var(--t1);padding:20px 28px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.agb-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px}
+.agb-sub{font-size:11px;color:rgba(255,255,255,.45)}
+.agb-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:rgba(255,255,255,.8)}
+/* loading overlay */
+.loading{position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.loading-text{color:#fff;font-size:13px;font-weight:600}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* password lock */
+.lock-screen{position:fixed;inset:0;background:var(--sb);z-index:998;display:flex;align-items:center;justify-content:center}
+.lock-box{background:#1a1d27;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:40px 36px;width:360px;max-width:95vw;text-align:center}
+.lock-logo{font-size:15px;font-weight:800;color:#fff;letter-spacing:.06em;margin-bottom:4px}
+.lock-sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.08em;text-transform:uppercase;margin-bottom:32px}
+.lock-title{font-size:14px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:16px}
+.lock-inp{width:100%;font-family:var(--fn);font-size:14px;padding:11px 14px;border:1px solid rgba(255,255,255,.15);border-radius:var(--r);background:rgba(255,255,255,.06);color:#fff;text-align:center;letter-spacing:.1em;margin-bottom:12px;outline:none}
+.lock-inp:focus{border-color:rgba(255,255,255,.35)}
+.lock-btn{width:100%;font-family:var(--fn);font-size:13px;font-weight:700;padding:11px;border-radius:var(--r);border:none;background:var(--blu);color:#fff;cursor:pointer;transition:background .12s}
+.lock-btn:hover{background:#2f4cc4}
+.lock-err{font-size:12px;color:#ff6b6b;margin-top:10px;min-height:18px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--t1);color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:700;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:300;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:768px){.app{grid-template-columns:1fr}.sb{display:none}.tw{margin-left:16px;margin-right:16px}}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">데이터 불러오는 중...</div>
+</div>
+
+<!-- Password lock screen (admin only) -->
+<div class="lock-screen" id="lock-screen" style="display:none">
+  <div class="lock-box">
+    <div class="lock-logo">RUNNBLE</div>
+    <div class="lock-sub">Ad Operations</div>
+    <div class="lock-title">관리자 비밀번호를 입력하세요</div>
+    <input class="lock-inp" type="password" id="lock-pw" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')tryLogin()">
+    <button class="lock-btn" onclick="tryLogin()">로그인</button>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
+
+<div class="app">
+<aside class="sb" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-brand">RUNNBLE</div>
+    <div class="sb-sub">Ad Operations</div>
+  </div>
+  <div class="sb-sec">분석</div>
+  <button class="sbi on" id="sb-list" onclick="gotoList()"><span>▤</span> 전체 캠페인 <span class="ct" id="ct-all">0</span></button>
+  <button class="sbi" id="sb-mo" onclick="gotoMonthly()"><span>◫</span> 월별 성과</button>
+  <div class="sb-div"></div>
+  <div class="sb-sec">랩사</div>
+  <div id="sb-ags"></div>
+  <div class="sb-div"></div>
+  <button class="sbi" id="sb-stg" onclick="gotoSettings()"><span>⚙</span> 설정</button>
+  <div class="sb-bottom">
+    <div class="sb-date" id="sb-date"></div>
+    <div class="sb-sync"><span class="sync-dot" id="sync-dot"></span><span id="sync-txt" style="color:rgba(255,255,255,.4);font-size:10px">연결 중...</span></div>
+  </div>
+</aside>
+
+<div class="main" id="main">
+  <!-- LIST -->
+  <div id="v-list">
+    <div class="ph">
+      <div class="ph-l"><div class="ey">Campaign Management</div><div class="pt" id="list-title">전체 캠페인</div></div>
+      <div class="ph-r">
+        <div class="srch">
+          <span class="srch-ico">🔍</span>
+          <input id="srch-inp" placeholder="캠페인 · 광고주 · 랩사" oninput="doSearch()" onblur="setTimeout(closeSearch,160)">
+          <div class="srch-drop" id="srch-drop"></div>
+        </div>
+        <button class="btn btn-p" onclick="openNewModal()">+ 새 캠페인</button>
+      </div>
+    </div>
+    <div class="mrow" id="month-chips"></div>
+    <div class="frow">
+      <span style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em">랩사</span>
+      <select class="fsel" id="ag-filter" onchange="renderList()"><option value="">전체</option></select>
+    </div>
+    <div class="krow" id="list-kpi"></div>
+    <div class="pad"><div class="card" id="clist"></div></div>
+  </div>
+
+  <!-- REPORT -->
+  <div id="v-report" style="display:none">
+    <div class="agb" id="agb" style="display:none">
+      <div><div class="agb-title" id="agb-title">광고 성과 리포트</div><div class="agb-sub" id="agb-sub"></div></div>
+      <div class="agb-badge" id="agb-badge"></div>
+    </div>
+    <div class="rnav" id="rnav">
+      <button class="rback" onclick="gotoList()">← 목록으로</button>
+      <span class="rcrumb" id="rcrumb"></span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="doExport()">CSV</button>
+        <button class="btn btn-sm btn-p" onclick="openShare()">공유 링크</button>
+      </div>
+    </div>
+    <div class="agdf" id="agdf" style="display:none">
+      <label>기간</label>
+      <input type="date" id="af-s" onchange="onAgFilter()">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" id="af-e" onchange="onAgFilter()">
+      <button class="btn btn-sm" onclick="resetAgFilter()">전체 기간</button>
+      <div style="margin-left:auto"><button class="btn btn-sm" onclick="doExport()">CSV</button></div>
+    </div>
+    <div class="rh">
+      <div><div class="rh-title" id="rh-title">리포트</div><div class="rh-chips" id="rh-chips"></div></div>
+    </div>
+    <div class="scard" id="r-setup">
+      <div class="sh">캠페인 설정</div>
+      <div class="sgrid">
+        <div class="fld"><label>광고주</label><input type="text" id="rc-client"></div>
+        <div class="fld"><label>캠페인명</label><input type="text" id="rc-campaign"></div>
+        <div class="fld"><label>랩사명</label><input type="text" id="rc-agency"></div>
+        <div class="fld"><label>시작일</label><input type="date" id="rc-start" onchange="rDateChange()"></div>
+        <div class="fld"><label>종료일</label><input type="date" id="rc-end" onchange="rDateChange()"></div>
+        <div class="fld">
+          <label>공유 코드 <span style="font-weight:400;color:var(--t3)">(랩사 링크 접근 비밀번호)</span></label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="rc-token" placeholder="예: incross2026" style="flex:1">
+            <button class="btn btn-sm" onclick="genToken()" title="랜덤 생성">🎲 랜덤</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+        <button class="btn btn-p" onclick="rSaveCfg()">저장하기</button>
+        <span id="save-status" style="font-size:11px;color:var(--grn);font-weight:600"></span>
+      </div>
+      <div class="hr"></div>
+      <div class="sh" style="margin-bottom:8px">광고 상품</div>
+      <div class="pchips" id="r-prods"></div>
+      <div style="display:flex;gap:7px;margin-top:8px">
+        <input type="text" id="r-newprod" placeholder="상품명 입력" style="font-family:var(--fn);font-size:12px;padding:0 9px;border:1px solid var(--bdr2);border-radius:var(--r);width:190px;height:30px" onkeydown="if(event.key==='Enter')rAddProd()">
+        <button class="btn btn-sm" onclick="rAddProd()">+ 추가</button>
+      </div>
+    </div>
+    <div class="krow" id="r-kpi"></div>
+    <div class="tbar" id="r-tabs"></div>
+    <div class="tw" id="r-tbl"></div>
+  </div>
+
+  <!-- MONTHLY -->
+  <div id="v-monthly" style="display:none">
+    <div class="ph"><div class="ph-l"><div class="ey">Performance Report</div><div class="pt">월별 성과</div></div></div>
+    <div class="mrow" id="month-chips-2"></div>
+    <div class="krow" id="mo-kpi"></div>
+    <div class="mvg">
+      <div><div class="mvt" id="mo-title">캠페인 성과</div>
+        <div class="mvcard"><table><thead><tr>
+          <th>캠페인</th><th>광고주</th><th>랩사</th><th>기간</th>
+          <th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th>
+        </tr></thead><tbody id="mo-tbody"></tbody></table></div>
+      </div>
+      <div><div class="mvt">랩사별 합산</div>
+        <div class="mvcard"><table><thead><tr>
+          <th>랩사</th><th class="r">캠페인</th><th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th>
+        </tr></thead><tbody id="ag-tbody"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="v-settings" style="display:none">
+    <div class="ph"><div class="ph-l"><div class="ey">Configuration</div><div class="pt">설정</div></div></div>
+    <div class="stg">
+      <div class="stg-sec">
+        <div class="stg-title">CTR 기준값 설정</div>
+        <div class="stg-sub">이 값을 초과할 때만 노란색 박스가 표시됩니다. 모든 캠페인에 적용되며 실시간으로 저장됩니다.</div>
+        <div class="thr-grid" id="thr-grid"></div>
+        <div class="thr-add">
+          <input type="text" id="thr-new-name" placeholder="새 상품명 입력" style="width:180px">
+          <input type="text" id="thr-new-val" placeholder="기준 %" style="width:80px;font-family:var(--fn);font-size:12px;padding:0 9px;border:1px solid var(--bdr2);border-radius:var(--r);height:30px">
+          <button class="btn btn-sm btn-p" onclick="thrAdd()">+ 추가</button>
+        </div>
+      </div>
+      <div class="stg-sec">
+        <div class="stg-title">공유 코드 관리</div>
+        <div class="stg-sub" style="margin-bottom:12px">각 캠페인의 랩사 공유 링크 코드를 한눈에 확인하고 복사할 수 있습니다.</div>
+        <div style="position:relative;margin-bottom:12px">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:13px;pointer-events:none">🔍</span>
+          <input type="text" id="token-search" placeholder="캠페인명, 랩사명으로 검색..." oninput="renderTokenList()"
+            style="width:100%;font-family:var(--fn);font-size:12px;padding:0 10px 0 30px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);height:34px">
+        </div>
+        <div id="token-list"></div>
+      </div>
+      <div class="stg-sec">
+        <div class="stg-title">데이터 백업</div>
+        <div class="stg-sub">Firebase에 저장된 전체 데이터를 JSON으로 내보낼 수 있습니다.</div>
+        <button class="btn" onclick="exportAll()">전체 데이터 내보내기 (JSON)</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- modals -->
+<div class="ovl" id="new-ovl" onclick="if(event.target===this)closeNewModal()">
+  <div class="modal">
+    <div class="modal-title" id="nm-title">새 캠페인 추가</div>
+    <div class="modal-sub">기본 정보를 입력하세요</div>
+    <input type="hidden" id="nm-id">
+    <div class="mfr">
+      <div class="mfld"><label>광고주 *</label><input type="text" id="nm-client" placeholder="예: 아식스"></div>
+      <div class="mfld"><label>랩사명 *</label><input type="text" id="nm-agency" placeholder="예: 인크로스"></div>
+    </div>
+    <div class="mfld"><label>캠페인명 *</label><input type="text" id="nm-campaign" placeholder="예: 아식스 런닝화 6월"></div>
+    <div class="mfr">
+      <div class="mfld"><label>시작일 *</label><input type="date" id="nm-start"></div>
+      <div class="mfld"><label>종료일 *</label><input type="date" id="nm-end"></div>
+    </div>
+    <div class="mfld"><label>광고 상품 (쉼표 구분)</label><input type="text" id="nm-prods" placeholder="바텀시트, 메인 띠배너, 기록면 띠배너"></div>
+    <div class="mac">
+      <button class="btn" onclick="closeNewModal()">취소</button>
+      <button class="btn btn-p" onclick="saveCampaign()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="ovl" id="share-ovl" onclick="if(event.target===this)closeShare()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">공유 링크 생성</div>
+    <div class="modal-sub">이 링크를 랩사에 전달하세요. 성과 데이터만 표시됩니다.</div>
+    <div class="urlbox" id="share-url"></div>
+    <div class="mac">
+      <button class="btn" onclick="closeShare()">닫기</button>
+      <button class="btn btn-p" onclick="copyShare()">링크 복사</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ════════════════════════════════════
+//  FIREBASE CONFIG
+// ════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDhTHHENqoTPgdxiAXoRkTtXPDR5iMy2pk",
+  authDomain: "runable-daily.firebaseapp.com",
+  databaseURL: "https://runable-daily-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "runable-daily",
+  storageBucket: "runable-daily.firebasestorage.app",
+  messagingSenderId: "427033297328",
+  appId: "1:427033297328:web:2c8049169a2f5934865675"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ════════════════════════════════════
+//  IN-MEMORY STORE (Firebase → local cache)
+// ════════════════════════════════════
+const DOW = ['일','월','화','수','목','금','토'];
+let CAMPS = [];   // campaigns array
+let REPORTS = {}; // { [id]: reportData }
+let THR = {};     // { [productName]: threshold }
+
+let selMonth = 'all';
+let curView = 'list';
+let curCampId = null;
+let curRD = null;
+let curTab = 0;
+let isAgency = false;
+let dbReady = false;
+
+// ── utils ──
+function N(n){ return Math.round(n).toLocaleString('ko-KR') }
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500) }
+function hideLoading(){ document.getElementById('loading').style.display='none' }
+function setSyncStatus(ok){ document.getElementById('sync-dot').className='sync-dot'+(ok?'':' off'); document.getElementById('sync-txt').textContent=ok?'실시간 연결됨':'연결 끊김' }
+
+// Date helpers
+function dateStr(d){ const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}` }
+function parseDateUTC(s){ return new Date(s+'T12:00:00Z') }
+function getDow(s){ return DOW[parseDateUTC(s).getUTCDay()] }
+function isWe(s){ const d=parseDateUTC(s).getUTCDay(); return d===0||d===6 }
+function getDatesRange(start,end){
+  if(!start||!end) return [];
+  const out=[]; let d=parseDateUTC(start); const e=parseDateUTC(end);
+  while(d<=e){ out.push(dateStr(d)); d.setUTCDate(d.getUTCDate()+1); }
+  return out;
+}
+
+// CTR display
+function ctrDisplay(v,prod){
+  if(v===''||v===null||v===undefined) return '—';
+  const n=parseFloat(v); if(isNaN(n)) return '—';
+  if(prod && THR[prod]!==undefined && n>=THR[prod]) return `<span class="cpill">${n.toFixed(2)}%</span>`;
+  return `<span style="font-size:11px;color:var(--t2)">${n.toFixed(2)}%</span>`;
+}
+function ctrNoThr(v){
+  if(v===''||v===null||v===undefined||isNaN(parseFloat(v))) return '—';
+  return `<span style="font-size:11px;color:var(--t2)">${parseFloat(v).toFixed(2)}%</span>`;
+}
+
+// Firebase key encoding (dots/slashes not allowed in Firebase keys)
+function encodeKey(s){ return s.replace(/\./g,'__dot__').replace(/\//g,'__sl__').replace(/#/g,'__hash__').replace(/\[/g,'__lb__').replace(/\]/g,'__rb__') }
+function decodeKey(s){ return s.replace(/__dot__/g,'.').replace(/__sl__/g,'/').replace(/__hash__/g,'#').replace(/__lb__/g,'[').replace(/__rb__/g,']') }
+
+// Encode all keys in report data for Firebase
+function encodeReport(rd){
+  if(!rd||!rd.data) return rd;
+  const encoded = {...rd, data:{}};
+  Object.entries(rd.data).forEach(([prod,dates])=>{
+    const eProd = encodeKey(prod);
+    encoded.data[eProd] = {};
+    Object.entries(dates||{}).forEach(([date,vals])=>{
+      encoded.data[eProd][encodeKey(date)] = vals;
+    });
+  });
+  return encoded;
+}
+function decodeReport(rd){
+  if(!rd||!rd.data) return rd;
+  const decoded = {...rd, data:{}};
+  Object.entries(rd.data).forEach(([prod,dates])=>{
+    const dProd = decodeKey(prod);
+    decoded.data[dProd] = {};
+    Object.entries(dates||{}).forEach(([date,vals])=>{
+      decoded.data[dProd][decodeKey(date)] = vals;
+    });
+  });
+  return decoded;
+}
+
+// ════════════════════════════════════
+//  FIREBASE STORAGE FUNCTIONS
+// ════════════════════════════════════
+function loadCamps(){ return CAMPS }
+
+async function saveCamps(arr){
+  CAMPS = arr;
+  await set(ref(db,'campaigns'), arr);
+}
+
+function loadRD(id){ return REPORTS[id] || null }
+
+async function saveRD(id, data){
+  REPORTS[id] = data;
+  await set(ref(db,'reports/'+id), encodeReport(data));
+}
+
+async function saveThresholds(t){
+  THR = t;
+  // encode keys for Firebase
+  const enc={};
+  Object.entries(t).forEach(([k,v])=>{ enc[encodeKey(k)]=v; });
+  await set(ref(db,'thresholds'), enc);
+}
+
+// ════════════════════════════════════
+//  REALTIME LISTENERS
+// ════════════════════════════════════
+function startListeners(){
+  // Campaigns
+  onValue(ref(db,'campaigns'), snap=>{
+    CAMPS = snap.val() || [];
+    if(dbReady && curView==='list') renderAll();
+    if(dbReady && curView==='monthly') renderMonthly();
+    setSyncStatus(true);
+  }, ()=>setSyncStatus(false));
+
+  // Reports
+  onValue(ref(db,'reports'), snap=>{
+    const raw = snap.val() || {};
+    REPORTS = {};
+    Object.entries(raw).forEach(([id,rd])=>{ REPORTS[id]=decodeReport(rd); });
+    if(dbReady){
+      if(curView==='list') renderAll();
+      if(curView==='monthly') renderMonthly();
+      // if report is open, refresh it (but keep input focus)
+      if(curView==='report' && curRD && curCampId){
+        const fresh = REPORTS[curCampId];
+        if(fresh){
+          // merge: keep local unsaved edits if they exist, otherwise use fresh
+          curRD = fresh;
+          clearTimeout(window._refreshTimer);
+          window._refreshTimer = setTimeout(()=>{ renderRMetrics(); renderRTable(); }, 200);
+        }
+      }
+    }
+    setSyncStatus(true);
+  }, ()=>setSyncStatus(false));
+
+  // Thresholds
+  onValue(ref(db,'thresholds'), snap=>{
+    const raw = snap.val() || {};
+    THR = {};
+    Object.entries(raw).forEach(([k,v])=>{ THR[decodeKey(k)]=v; });
+    if(!Object.keys(THR).length){
+      THR = {'바텀시트':5.0,'메인 띠배너':1.0,'기록면 띠배너':0.5,'접수면 띠배너':0.5};
+      saveThresholds(THR);
+    }
+    if(dbReady && curView==='settings'){ renderSettings(); renderTokenList(); }
+    setSyncStatus(true);
+  }, ()=>setSyncStatus(false));
+}
+
+// ════════════════════════════════════
+//  PASSWORD AUTH
+//  비밀번호를 바꾸려면 아래 ADMIN_PW 값을 수정하세요
+// ════════════════════════════════════
+const ADMIN_PW = 'runablead';  // ← 원하는 비밀번호로 변경
+const SESSION_KEY = 'runnble_admin_auth';
+
+function isAdminAuthed(){
+  return sessionStorage.getItem(SESSION_KEY) === 'ok';
+}
+
+window.tryLogin = function(){
+  const pw = document.getElementById('lock-pw').value;
+  if(pw === ADMIN_PW){
+    sessionStorage.setItem(SESSION_KEY,'ok');
+    document.getElementById('lock-screen').style.display='none';
+    startAdminMode();
+  } else {
+    document.getElementById('lock-err').textContent='비밀번호가 올바르지 않습니다';
+    document.getElementById('lock-pw').value='';
+    document.getElementById('lock-pw').focus();
+  }
+};
+
+// ════════════════════════════════════
+//  INIT
+// ════════════════════════════════════
+async function init(){
+  const p=new URLSearchParams(location.search);
+  const id=p.get('id');
+  isAgency=p.get('view')==='agency';
+
+  if(isAgency){
+    // 랩사 공유 링크: 사이드바 완전 제거, 탈출 불가
+    document.getElementById('sidebar').style.display='none';
+    document.querySelector('.app').style.gridTemplateColumns='1fr';
+    // 뒤로가기/URL변조로 관리자 진입 차단
+    history.pushState(null,'',location.href);
+    window.addEventListener('popstate',()=>history.pushState(null,'',location.href));
+    startListeners();
+    await waitForData();
+    hideLoading();
+    if(!id){ showAgencyError('공유 링크가 올바르지 않습니다'); return; }
+    // 토큰 검증
+    const urlToken = p.get('token')||'';
+    const rd = REPORTS[id];
+    const campToken = (rd&&rd.cfg&&rd.cfg.token)||'';
+    if(!campToken || urlToken !== campToken){
+      showAgencyError('접근 권한이 없습니다. 올바른 공유 링크를 사용해주세요.');
+      return;
+    }
+    openReport(id);
+  } else {
+    // 관리자: 비밀번호 확인
+    hideLoading();
+    if(isAdminAuthed()){
+      startAdminMode();
+    } else {
+      document.getElementById('lock-screen').style.display='flex';
+      setTimeout(()=>document.getElementById('lock-pw').focus(),100);
+    }
+  }
+}
+
+function showAgencyError(msg){
+  document.getElementById('v-report').style.display='';
+  document.getElementById('v-list').style.display='none';
+  document.getElementById('agb').style.display='none';
+  document.getElementById('rnav').style.display='none';
+  document.getElementById('r-setup').style.display='none';
+  document.getElementById('agdf').style.display='none';
+  document.getElementById('r-kpi').innerHTML='';
+  document.getElementById('r-tabs').innerHTML='';
+  document.getElementById('r-tbl').innerHTML=`
+    <div style="padding:60px 20px;text-align:center">
+      <div style="font-size:32px;margin-bottom:16px">🔒</div>
+      <div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:8px">${msg||'접근 권한이 없습니다'}</div>
+      <div style="font-size:12px;color:var(--t3)">올바른 공유 링크를 통해 접속해주세요</div>
+    </div>`;
+}
+
+window.genToken=async function(){
+  const chars='abcdefghijklmnopqrstuvwxyz0123456789';
+  const token=Array.from({length:8},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  document.getElementById('rc-token').value=token;
+  await window.rSaveCfg();
+};
+
+async function startAdminMode(){
+  startListeners();
+  await waitForData();
+  const p=new URLSearchParams(location.search);
+  const id=p.get('id');
+  dbReady=true;
+  id ? openReport(id) : renderAll();
+}
+
+async function waitForData(){
+  await new Promise(resolve=>{
+    let done=false;
+    onValue(ref(db,'campaigns'),()=>{ if(!done){done=true;resolve();} });
+    setTimeout(resolve,5000);
+  });
+  dbReady=true;
+}
+
+function renderAll(){
+  renderSidebar(); renderMonthChips('month-chips'); renderAgFilter(); renderListKpi(); renderList();
+}
+
+// ════════════════════════════════════
+//  VIEW SWITCHING
+// ════════════════════════════════════
+function showView(v){
+  curView=v;
+  ['list','report','monthly','settings'].forEach(n=>{ document.getElementById('v-'+n).style.display=n===v?'':'none'; });
+  document.getElementById('sb-list').className='sbi'+(v==='list'?' on':'');
+  document.getElementById('sb-mo').className='sbi'+(v==='monthly'?' on':'');
+  document.getElementById('sb-stg').className='sbi'+(v==='settings'?' on':'');
+  document.getElementById('main').scrollTop=0;
+}
+function gotoList(){ showView('list'); curCampId=null; curRD=null; history.replaceState(null,'',location.pathname); renderAll(); }
+function gotoMonthly(){ showView('monthly'); renderSidebar(); renderMonthChips('month-chips-2'); renderMonthly(); }
+function gotoSettings(){ showView('settings'); renderSettings(); renderTokenList(); }
+window.gotoList=gotoList; window.gotoMonthly=gotoMonthly; window.gotoSettings=gotoSettings;
+
+// ════════════════════════════════════
+//  SIDEBAR
+// ════════════════════════════════════
+function renderSidebar(){
+  document.getElementById('ct-all').textContent=CAMPS.length;
+  const dates=CAMPS.flatMap(c=>[c.start,c.end]).filter(Boolean).sort();
+  if(dates.length>=2) document.getElementById('sb-date').innerHTML=`전체 기간<br>${dates[0]} ~<br>${dates[dates.length-1]}`;
+  const ags=[...new Set(CAMPS.map(c=>c.agency).filter(Boolean))].sort();
+  const cnt={}; CAMPS.forEach(c=>{cnt[c.agency]=(cnt[c.agency]||0)+1;});
+  document.getElementById('sb-ags').innerHTML=ags.map(ag=>
+    `<button class="sbi sbi-ag" onclick="filterAg('${ag.replace(/'/g,"\\'")}')""><span>▸</span>${ag.length>11?ag.slice(0,11)+'…':ag}<span class="ct">${cnt[ag]}</span></button>`
+  ).join('');
+}
+window.filterAg=function(ag){ showView('list'); document.getElementById('ag-filter').value=ag; renderAll(); };
+
+// ════════════════════════════════════
+//  MONTH CHIPS
+// ════════════════════════════════════
+function getMonths(){
+  const ms=new Set(); CAMPS.forEach(c=>{if(c.start)ms.add(c.start.slice(0,7));});
+  return ['all',...Array.from(ms).sort().reverse()];
+}
+function moLabel(m){ if(m==='all') return '전체'; const[y,mo]=m.split('-'); return `${y}.${parseInt(mo)}`; }
+function renderMonthChips(id){
+  const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=getMonths().map(m=>`<button class="mc${selMonth===m?' on':''}" onclick="selMo('${m}')">${moLabel(m)}</button>`).join('');
+}
+window.selMo=function(m){ selMonth=m; renderMonthChips('month-chips'); renderMonthChips('month-chips-2'); if(curView==='list'){renderListKpi();renderList();}else if(curView==='monthly')renderMonthly(); };
+
+// ════════════════════════════════════
+//  SEARCH
+// ════════════════════════════════════
+window.doSearch=function(){
+  const q=document.getElementById('srch-inp').value.trim().toLowerCase();
+  const drop=document.getElementById('srch-drop');
+  if(!q){drop.classList.remove('open');return;}
+  const hits=CAMPS.filter(c=>[c.campaign,c.client,c.agency].some(s=>(s||'').toLowerCase().includes(q))).slice(0,8);
+  drop.innerHTML=hits.length ? hits.map(c=>`<div class="sri" onclick="openReport('${c.id}')"><div><div class="sri-name">${hl(c.campaign||'',q)}</div><div class="sri-meta">${c.client||''} · ${c.agency||''}</div></div></div>`).join('') : '<div style="padding:12px 14px;color:var(--t3);font-size:12px">결과 없음</div>';
+  drop.classList.add('open');
+};
+window.closeSearch=function(){ document.getElementById('srch-drop').classList.remove('open'); };
+function hl(t,q){ const i=t.toLowerCase().indexOf(q); if(i<0)return t; return t.slice(0,i)+`<mark style="background:#fef3c7;border-radius:2px">${t.slice(i,i+q.length)}</mark>`+t.slice(i+q.length); }
+
+// ════════════════════════════════════
+//  CAMPAIGN LIST
+// ════════════════════════════════════
+function renderAgFilter(){
+  const sel=document.getElementById('ag-filter'); const cur=sel.value;
+  const ags=[...new Set(CAMPS.map(c=>c.agency).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">전체 랩사</option>'+ags.map(a=>`<option${cur===a?' selected':''}>${a}</option>`).join('');
+}
+function getFiltered(){
+  const ag=document.getElementById('ag-filter').value;
+  return CAMPS.filter(c=>{
+    if(selMonth!=='all'&&(!c.start||c.start.slice(0,7)!==selMonth))return false;
+    if(ag&&c.agency!==ag)return false;
+    return true;
+  });
+}
+function campMetrics(c){
+  const rd=REPORTS[c.id]; if(!rd||!rd.data)return{imp:0,click:0,ctr:0};
+  const start=c.start||'', end=c.end||'';
+  let imp=0,click=0;
+  Object.values(rd.data).forEach(prodData=>{
+    Object.entries(prodData||{}).forEach(([date,r])=>{
+      if(start && date<start) return;
+      if(end && date>end) return;
+      imp  += (r.imp_r!==undefined && r.imp_r!=='') ? (+r.imp_r||0) : 0;
+      click+= (r.click_r!==undefined && r.click_r!=='') ? (+r.click_r||0) : 0;
+    });
+  });
+  return{imp,click,ctr:imp>0?click/imp*100:0};
+}
+function isActive(c){ const t=new Date().toISOString().split('T')[0]; return c.start<=t&&t<=c.end; }
+
+function renderListKpi(){
+  const list=getFiltered();
+  let imp=0,click=0; list.forEach(c=>{const m=campMetrics(c);imp+=m.imp;click+=m.click;});
+  const ctr=imp>0?click/imp*100:0, act=list.filter(isActive).length;
+  document.getElementById('list-kpi').innerHTML=`
+    <div class="kpi gray"><div class="kl">캠페인 수</div><div class="kv" style="color:var(--t1)">${list.length}</div><div class="ks">진행중 ${act}개</div></div>
+    <div class="kpi blue"><div class="kl">총 노출수</div><div class="kv">${N(imp)}</div><div class="ks">실제값 기준</div></div>
+    <div class="kpi blue"><div class="kl">총 클릭수</div><div class="kv">${N(click)}</div><div class="ks">실제값 기준</div></div>
+    <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div><div class="ks">click-through rate</div></div>`;
+}
+function renderList(){
+  const list=getFiltered().sort((a,b)=>(b.start||'').localeCompare(a.start||''));
+  const el=document.getElementById('clist');
+  if(!list.length){el.innerHTML='<div class="empty">📋<br><br>캠페인이 없습니다<br><span style="font-size:12px">새 캠페인을 추가해보세요</span></div>';return;}
+  el.innerHTML=list.map(c=>{
+    const m=campMetrics(c),act=isActive(c);
+    return `<div class="ccard${curCampId===c.id?' sel':''}" onclick="openReport('${c.id}')">
+      <div class="cdot ${act?'on':'off'}"></div>
+      <div class="cbody">
+        <div class="cname">${c.campaign||'(이름 없음)'}</div>
+        <div class="cmeta"><span>${c.client||''}</span><span class="chip cb">${c.agency||''}</span><span>${c.start||''} ~ ${c.end||''}</span><span>상품 ${(c.products||[]).length}개</span></div>
+      </div>
+      <div class="cstats">
+        <div class="cs"><div class="csv">${N(m.imp)}</div><div class="csl">노출</div></div>
+        <div class="cs"><div class="csv">${N(m.click)}</div><div class="csl">클릭</div></div>
+        <div class="cs"><div class="csv" style="color:var(--t1)">${m.ctr.toFixed(2)}%</div><div class="csl">CTR</div></div>
+      </div>
+      <div style="display:flex;gap:4px" onclick="event.stopPropagation()">
+        <button class="btn-icon" onclick="openEditModal('${c.id}')">✏️</button>
+        <button class="btn-icon del" onclick="delCamp('${c.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════
+//  OPEN REPORT
+// ════════════════════════════════════
+window.openReport=async function(id){
+  const camp=CAMPS.find(c=>c.id===id);
+  if(!camp){showToast('캠페인을 찾을 수 없습니다');return;}
+  curCampId=id; curTab=0;
+  const raw=REPORTS[id];
+  curRD=raw||{cfg:{client:camp.client,campaign:camp.campaign,agency:camp.agency,start:camp.start,end:camp.end},products:camp.products||[],data:{}};
+  (curRD.products||[]).forEach(p=>{if(!curRD.data[p])curRD.data[p]={};});
+  showView('report');
+  if(isAgency){
+    document.getElementById('agb').style.display='flex';
+    document.getElementById('rnav').style.display='none';
+    document.getElementById('r-setup').style.display='none';
+    document.getElementById('agdf').style.display='flex';
+    document.getElementById('af-s').value=curRD.cfg.start||'';
+    document.getElementById('af-e').value=curRD.cfg.end||'';
+    document.getElementById('agb-title').textContent=curRD.cfg.campaign||'광고 성과 리포트';
+    document.getElementById('agb-sub').textContent=(curRD.cfg.start&&curRD.cfg.end)?`${curRD.cfg.start} ~ ${curRD.cfg.end}`:'';
+    document.getElementById('agb-badge').textContent=curRD.cfg.agency||'';
+  } else {
+    document.getElementById('agb').style.display='none';
+    document.getElementById('rnav').style.display='flex';
+    document.getElementById('r-setup').style.display='';
+    document.getElementById('agdf').style.display='none';
+    fillRSetup();
+  }
+  renderRHeader(); renderRProdChips(); renderRMetrics(); renderRTabs(); renderRTable();
+  if(!isAgency) renderSidebar();
+};
+window.onAgFilter=function(){ renderRTable(); renderRMetrics(); };
+window.resetAgFilter=function(){ document.getElementById('af-s').value=curRD.cfg.start||''; document.getElementById('af-e').value=curRD.cfg.end||''; window.onAgFilter(); };
+
+// ════════════════════════════════════
+//  REPORT — SETUP
+// ════════════════════════════════════
+function fillRSetup(){
+  const c=curRD.cfg;
+  document.getElementById('rc-client').value=c.client||'';
+  document.getElementById('rc-campaign').value=c.campaign||'';
+  document.getElementById('rc-agency').value=c.agency||'';
+  document.getElementById('rc-start').value=c.start||'';
+  document.getElementById('rc-end').value=c.end||'';
+  document.getElementById('rc-token').value=c.token||'';
+}
+window.rSaveCfg=async function(){
+  curRD.cfg.client=document.getElementById('rc-client').value;
+  curRD.cfg.campaign=document.getElementById('rc-campaign').value;
+  curRD.cfg.agency=document.getElementById('rc-agency').value;
+  curRD.cfg.token=document.getElementById('rc-token').value.trim();
+  const statusEl=document.getElementById('save-status');
+  if(statusEl) statusEl.textContent='저장 중...';
+  await saveRD(curCampId,curRD);
+  await syncCamp();
+  renderRHeader(); renderSidebar();
+  if(statusEl){
+    statusEl.textContent='저장되었습니다';
+    statusEl.style.color='var(--grn)';
+    setTimeout(()=>{ statusEl.textContent=''; },3000);
+  }
+  showToast('저장되었습니다');
+};
+window.rDateChange=function(){
+  curRD.cfg.start=document.getElementById('rc-start').value;
+  curRD.cfg.end=document.getElementById('rc-end').value;
+  saveRD(curCampId,curRD); syncCamp(); renderRHeader(); renderRMetrics(); renderRTabs(); renderRTable();
+};
+async function syncCamp(){
+  const i=CAMPS.findIndex(c=>c.id===curCampId); if(i<0)return;
+  CAMPS[i]={...CAMPS[i],client:curRD.cfg.client,agency:curRD.cfg.agency,campaign:curRD.cfg.campaign,start:curRD.cfg.start,end:curRD.cfg.end,products:curRD.products};
+  await set(ref(db,'campaigns'), CAMPS);
+}
+function renderRHeader(){
+  const c=curRD.cfg,t=new Date().toISOString().split('T')[0],act=c.start&&c.end&&c.start<=t&&t<=c.end;
+  document.getElementById('rcrumb').textContent=c.campaign||'';
+  document.getElementById('rh-title').textContent=c.campaign||'리포트';
+  document.getElementById('rh-chips').innerHTML=`
+    <span class="chip cb">${c.agency||''}</span>
+    <span class="chip cx">${c.client||''}</span>
+    ${c.start&&c.end?`<span class="chip cx">${c.start} ~ ${c.end}</span>`:''}
+    <span class="chip ${act?'cg':'cx'}">${act?'진행중':'종료'}</span>`;
+}
+
+// ════════════════════════════════════
+//  REPORT — PRODUCTS
+// ════════════════════════════════════
+function renderRProdChips(){
+  document.getElementById('r-prods').innerHTML=curRD.products.map((p,i)=>
+    `<span class="pch">${p}<span class="x" onclick="rRemProd(${i})">×</span></span>`).join('');
+}
+window.rAddProd=function(){
+  const v=document.getElementById('r-newprod').value.trim(); if(!v)return;
+  if(curRD.products.includes(v)){showToast('이미 있는 상품명');return;}
+  curRD.products.push(v); curRD.data[v]={};
+  saveRD(curCampId,curRD); syncCamp();
+  document.getElementById('r-newprod').value='';
+  renderRProdChips(); renderRMetrics(); renderRTabs(); renderRTable();
+};
+window.rRemProd=function(i){
+  if(!confirm(`"${curRD.products[i]}" 삭제?`))return;
+  delete curRD.data[curRD.products[i]]; curRD.products.splice(i,1);
+  if(curTab>0&&curTab>curRD.products.length) curTab=0;
+  saveRD(curCampId,curRD); syncCamp();
+  renderRProdChips(); renderRMetrics(); renderRTabs(); renderRTable();
+};
+
+// ════════════════════════════════════
+//  REPORT — TABS
+// ════════════════════════════════════
+function renderRTabs(){
+  const ps=curRD.products;
+  const labels=ps.length>1?['전체 합산',...ps]:[...ps];
+  document.getElementById('r-tabs').innerHTML=labels.map((l,i)=>
+    `<button class="rtab${curTab===i?' on':''}" onclick="switchTab(${i})">${l}</button>`).join('');
+}
+window.switchTab=function(i){ curTab=i; document.querySelectorAll('.rtab').forEach((b,j)=>b.classList.toggle('on',j===i)); renderRMetrics(); renderRTable(); };
+
+// ════════════════════════════════════
+//  REPORT — METRICS & TABLE
+// ════════════════════════════════════
+function getViewDates(){
+  if(isAgency){
+    const s=document.getElementById('af-s').value||curRD.cfg.start||'';
+    const e=document.getElementById('af-e').value||curRD.cfg.end||'';
+    return getDatesRange(s,e);
+  }
+  return getDatesRange(curRD.cfg.start,curRD.cfg.end);
+}
+function calcM(prods){
+  const dates=getViewDates();
+  let imp=0,click=0,ir=0,cr=0;
+  prods.forEach(p=>dates.forEach(d=>{
+    const r=(curRD.data[p]||{})[d]||{};
+    imp+=+r.imp||0; click+=+r.click||0; ir+=+r.imp_r||0; cr+=+r.click_r||0;
+  }));
+  return{imp,click,ctr:imp>0?click/imp*100:0,ir,cr,ctr_r:ir>0?cr/ir*100:0};
+}
+function tabProds(){
+  const ps=curRD.products;
+  if(!ps||!ps.length) return [];
+  const multi=curTab===0&&ps.length>1;
+  if(multi) return ps;
+  const idx=ps.length>1?curTab-1:curTab;
+  return idx>=0&&idx<ps.length?[ps[idx]]:[];
+}
+function renderRMetrics(){
+  const m=calcM(tabProds());
+  const el=document.getElementById('r-kpi');
+  if(isAgency){
+    el.innerHTML=`
+      <div class="kpi blue"><div class="kl">총 노출수</div><div class="kv">${N(m.imp)}</div><div class="ks">impressions</div></div>
+      <div class="kpi blue"><div class="kl">총 클릭수</div><div class="kv">${N(m.click)}</div><div class="ks">clicks</div></div>
+      <div class="kpi gray"><div class="kl">CTR</div><div class="kv" style="color:var(--t1)">${m.ctr.toFixed(2)}%</div><div class="ks">click-through rate</div></div>`;
+  } else {
+    el.innerHTML=`
+      <div class="kpi blue"><div class="kl">노출수 (전달)</div><div class="kv">${N(m.imp)}</div></div>
+      <div class="kpi blue"><div class="kl">클릭수 (전달)</div><div class="kv">${N(m.click)}</div></div>
+      <div class="kpi gray"><div class="kl">CTR (전달)</div><div class="kv" style="color:var(--t1)">${m.ctr.toFixed(2)}%</div></div>
+      <div class="kpi pink"><div class="kl">노출수 (실제)</div><div class="kv">${N(m.ir)}</div></div>
+      <div class="kpi pink"><div class="kl">클릭수 (실제)</div><div class="kv">${N(m.cr)}</div></div>
+      <div class="kpi gray"><div class="kl">CTR (실제)</div><div class="kv" style="color:var(--t1)">${m.ctr_r.toFixed(2)}%</div></div>`;
+  }
+}
+function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'") }
+
+function niTd(val,ed,isReal,p,d,f){
+  const cls=isReal?'rc':'dc';
+  if(ed){
+    const id=`c_${p}_${d}_${f}`.replace(/[\s\/\.]/g,'_');
+    const isCtr=f.includes('ctr');
+    return `<td class="${cls}"><input class="ni${isCtr?' auto':''}"${isCtr?' data-auto="1"':''} id="${id}" type="text" inputmode="decimal" value="${val||''}" onchange="onCell('${esc(p)}','${d}','${f}',this.value)" onfocus="this.select();this.classList.remove('auto')" onblur="if(this.dataset.auto)this.classList.add('auto')"></td>`;
+  }
+  if(f.includes('ctr')) return `<td class="${cls}"><div class="ci c">${ctrDisplay(val,p)}</div></td>`;
+  return `<td class="${cls}"><div class="ci c">${val?(+val).toLocaleString('ko-KR'):'—'}</div></td>`;
+}
+
+function renderRTable(){
+  const dates=getViewDates();
+  const wrap=document.getElementById('r-tbl');
+  const ps=curRD.products;
+  if(!dates.length||!ps.length){
+    wrap.innerHTML='<div style="padding:36px;text-align:center;color:var(--t3);font-size:12px">캠페인 설정 후 날짜가 자동 생성됩니다</div>'; return;
+  }
+  const isMulti=curTab===0&&ps.length>1;
+  const prods=tabProds();
+  if(!prods.length){wrap.innerHTML='<div style="padding:36px;text-align:center;color:var(--t3)">상품이 없습니다</div>';return;}
+  let hg,hc,body='';
+  if(isMulti){
+    if(isAgency){
+      hg='<tr class="grp"><th class="bg" colspan="2"></th><th class="dg" colspan="3">합산 성과</th></tr>';
+      hc='<tr class="cols"><th class="bc" style="min-width:76px">날짜</th><th class="bc" style="min-width:28px">요일</th><th class="dc" style="min-width:88px">노출수</th><th class="dc" style="min-width:72px">클릭수</th><th class="dc" style="min-width:60px">CTR</th></tr>';
+    } else {
+      hg='<tr class="grp"><th class="bg" colspan="2"></th><th class="dg" colspan="3">전달값 합산</th><th class="rg" colspan="3">실제값 합산</th></tr>';
+      hc='<tr class="cols"><th class="bc" style="min-width:76px">날짜</th><th class="bc" style="min-width:28px">요일</th><th class="dc">노출수</th><th class="dc">클릭수</th><th class="dc">CTR</th><th class="rc">노출수</th><th class="rc">클릭수</th><th class="rc">CTR</th></tr>';
+    }
+    dates.forEach(d=>{
+      const dow=getDow(d),we=isWe(d);
+      let imp=0,click=0,ir=0,cr=0;
+      ps.forEach(p=>{const r=(curRD.data[p]||{})[d]||{};imp+=+r.imp||0;click+=+r.click||0;ir+=+r.imp_r||0;cr+=+r.click_r||0;});
+      const ctr=imp>0?click/imp*100:0,ctr_r=ir>0?cr/ir*100:0,hd=imp>0||click>0;
+      body+=`<tr${we?' class="we"':''}><td><div class="ci">${d.slice(5).replace('-','/')}<span class="dow">${dow}</span></div></td><td><div class="ci" style="color:var(--t3);font-size:10px">${dow}</div></td>`;
+      if(isAgency){
+        body+=`<td class="dc"><div class="ci c">${hd?N(imp):'—'}</div></td><td class="dc"><div class="ci c">${hd?N(click):'—'}</div></td><td class="dc"><div class="ci c">${hd?ctrNoThr(ctr):'—'}</div></td>`;
+      } else {
+        body+=`<td class="dc"><div class="ci c">${hd?N(imp):'—'}</div></td><td class="dc"><div class="ci c">${hd?N(click):'—'}</div></td><td class="dc"><div class="ci c">${hd?ctrNoThr(ctr):'—'}</div></td>`;
+        body+=`<td class="rc"><div class="ci c">${hd?N(ir):'—'}</div></td><td class="rc"><div class="ci c">${hd?N(cr):'—'}</div></td><td class="rc"><div class="ci c">${hd?ctrNoThr(ctr_r):'—'}</div></td>`;
+      }
+      body+='</tr>';
+    });
+    const tm=calcM(ps);
+    body+=`<tr class="sumr"><td><div class="ci">합계</div></td><td></td>`;
+    if(isAgency){
+      body+=`<td class="dc"><div class="ci">${N(tm.imp)}</div></td><td class="dc"><div class="ci">${N(tm.click)}</div></td><td class="dc"><div class="ci">${tm.ctr.toFixed(2)}%</div></td>`;
+    } else {
+      body+=`<td class="dc"><div class="ci">${N(tm.imp)}</div></td><td class="dc"><div class="ci">${N(tm.click)}</div></td><td class="dc"><div class="ci">${tm.ctr.toFixed(2)}%</div></td>`;
+      body+=`<td class="rc"><div class="ci">${N(tm.ir)}</div></td><td class="rc"><div class="ci">${N(tm.cr)}</div></td><td class="rc"><div class="ci">${tm.ctr_r.toFixed(2)}%</div></td>`;
+    }
+    body+='</tr>';
+  } else {
+    const prod=prods[0];
+    if(isAgency){
+      hg=`<tr class="grp"><th class="bg" colspan="2"></th><th class="dg" colspan="3">성과</th></tr>`;
+      hc=`<tr class="cols"><th class="bc" style="min-width:76px">날짜</th><th class="bc" style="min-width:28px">요일</th><th class="dc" style="min-width:88px">노출수</th><th class="dc" style="min-width:72px">클릭수</th><th class="dc" style="min-width:60px">CTR</th></tr>`;
+    } else {
+      hg=`<tr class="grp"><th class="bg" colspan="2"></th><th class="dg" colspan="3">전달값</th><th class="rg" colspan="3">실제값</th></tr>`;
+      hc=`<tr class="cols"><th class="bc" style="min-width:76px">날짜</th><th class="bc" style="min-width:28px">요일</th><th class="dc">노출수</th><th class="dc">클릭수</th><th class="dc">CTR</th><th class="rc">노출수</th><th class="rc">클릭수</th><th class="rc">CTR</th></tr>`;
+    }
+    dates.forEach(d=>{
+      const dow=getDow(d),we=isWe(d);
+      const row=(curRD.data[prod]||{})[d]||{};
+      body+=`<tr${we?' class="we"':''}><td><div class="ci">${d.slice(5).replace('-','/')}<span class="dow">${dow}</span></div></td><td><div class="ci" style="color:var(--t3);font-size:10px">${dow}</div></td>`;
+      if(isAgency){
+        body+=niTd(row.imp,false,false,prod,d,'imp')+niTd(row.click,false,false,prod,d,'click')+niTd(row.ctr,false,false,prod,d,'ctr');
+      } else {
+        body+=niTd(row.imp,true,false,prod,d,'imp')+niTd(row.click,true,false,prod,d,'click')+niTd(row.ctr,true,false,prod,d,'ctr');
+        body+=niTd(row.imp_r,true,true,prod,d,'imp_r')+niTd(row.click_r,true,true,prod,d,'click_r')+niTd(row.ctr_r,true,true,prod,d,'ctr_r');
+      }
+      body+='</tr>';
+    });
+    const sm=calcM([prod]);
+    body+=`<tr class="sumr"><td><div class="ci">합계</div></td><td></td>`;
+    if(isAgency){
+      body+=`<td class="dc"><div class="ci">${N(sm.imp)}</div></td><td class="dc"><div class="ci">${N(sm.click)}</div></td><td class="dc"><div class="ci">${sm.ctr.toFixed(2)}%</div></td>`;
+    } else {
+      body+=`<td class="dc"><div class="ci">${N(sm.imp)}</div></td><td class="dc"><div class="ci">${N(sm.click)}</div></td><td class="dc"><div class="ci">${sm.ctr.toFixed(2)}%</div></td>`;
+      body+=`<td class="rc"><div class="ci">${N(sm.ir)}</div></td><td class="rc"><div class="ci">${N(sm.cr)}</div></td><td class="rc"><div class="ci">${sm.ctr_r.toFixed(2)}%</div></td>`;
+    }
+    body+='</tr>';
+  }
+  wrap.innerHTML=`<table><thead>${hg}${hc}</thead><tbody>${body}</tbody></table>`;
+}
+
+window.onCell=async function(p,d,f,v){
+  if(!curRD.data[p])curRD.data[p]={};
+  if(!curRD.data[p][d])curRD.data[p][d]={};
+  curRD.data[p][d][f]=v;
+  const row=curRD.data[p][d];
+  if(f==='imp'||f==='click'){
+    const i2=+row.imp||0,c2=+row.click||0;
+    if(i2>0){row.ctr=(c2/i2*100).toFixed(2);const el=document.getElementById(`c_${p}_${d}_ctr`.replace(/[\s\/\.]/g,'_'));if(el){el.value=row.ctr;el.dataset.auto='1';}}
+  }
+  if(f==='imp_r'||f==='click_r'){
+    const i2=+row.imp_r||0,c2=+row.click_r||0;
+    if(i2>0){row.ctr_r=(c2/i2*100).toFixed(2);const el=document.getElementById(`c_${p}_${d}_ctr_r`.replace(/[\s\/\.]/g,'_'));if(el){el.value=row.ctr_r;el.dataset.auto='1';}}
+  }
+  // Debounce Firebase write (300ms after last keystroke)
+  clearTimeout(window._cellTimer);
+  window._cellTimer=setTimeout(async()=>{
+    await saveRD(curCampId,curRD);
+    renderRMetrics();
+  },300);
+};
+
+// ════════════════════════════════════
+//  SETTINGS
+// ════════════════════════════════════
+function renderSettings(){
+  const el=document.getElementById('thr-grid');
+  const entries=Object.entries(THR);
+  if(!entries.length){el.innerHTML='<div style="font-size:12px;color:var(--t3)">아래에서 추가하세요</div>';return;}
+  el.innerHTML=entries.map(([name,val])=>`
+    <div class="thr-row">
+      <div class="thr-name">${name}</div>
+      <input class="thr-inp" type="text" inputmode="decimal" value="${val}" onchange="thrChange('${esc(name)}',this.value)">
+      <div class="thr-pct">%</div>
+      <button class="btn-icon del" style="width:22px;height:22px;font-size:11px" onclick="thrDel('${esc(name)}')">×</button>
+    </div>`).join('');
+}
+window.thrChange=function(name,val){ const n=parseFloat(val); if(isNaN(n))return; THR[name]=n; saveThresholds(THR); if(curView==='report'&&curRD)renderRTable(); };
+window.thrDel=function(name){ delete THR[name]; saveThresholds(THR); renderSettings(); showToast('삭제되었습니다'); };
+window.thrAdd=function(){
+  const name=document.getElementById('thr-new-name').value.trim();
+  const val=parseFloat(document.getElementById('thr-new-val').value);
+  if(!name){showToast('상품명을 입력하세요');return;}
+  if(isNaN(val)){showToast('기준값을 입력하세요');return;}
+  THR[name]=val; saveThresholds(THR);
+  document.getElementById('thr-new-name').value='';
+  document.getElementById('thr-new-val').value='';
+  renderSettings(); showToast('추가되었습니다');
+};
+
+function renderTokenList(){
+  const el=document.getElementById('token-list'); if(!el) return;
+  const q=(document.getElementById('token-search')?.value||'').toLowerCase().trim();
+  let list = CAMPS;
+  if(q) list = CAMPS.filter(c=>(c.campaign||'').toLowerCase().includes(q)||(c.agency||'').toLowerCase().includes(q)||(c.client||'').toLowerCase().includes(q));
+  if(!list.length){
+    el.innerHTML=`<div style="font-size:12px;color:var(--t3);padding:16px 0">${q?'검색 결과가 없습니다':'등록된 캠페인이 없습니다'}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(c=>{
+    const rd = REPORTS[c.id];
+    const token = (rd&&rd.cfg&&rd.cfg.token)||'';
+    const shareUrl = token
+      ? `${location.origin}${location.pathname}?id=${c.id}&view=agency&token=${encodeURIComponent(token)}`
+      : '';
+    return `<div class="token-row">
+      <div class="token-camp">
+        <div class="token-camp-name">${c.campaign||'(이름 없음)'}</div>
+        <div class="token-camp-meta"><span class="chip cb" style="font-size:9px;padding:1px 5px">${c.agency||''}</span> ${c.start||''} ~ ${c.end||''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <input type="text" id="tkinp_${c.id}" value="${token}" placeholder="코드 입력"
+          style="font-family:monospace;font-size:12px;font-weight:700;width:130px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:5px;color:var(--blu);background:#fff;height:30px"
+          onkeydown="if(event.key==='Enter')saveTokenInline('${c.id}')">
+        <button class="btn btn-sm btn-p" onclick="saveTokenInline('${c.id}')">저장</button>
+        ${token ? `<button class="btn btn-sm" onclick="copyTokenUrl('${shareUrl.replace(/'/g,"\\'")}')">🔗 복사</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.copyTokenUrl=function(url){
+  navigator.clipboard.writeText(url).catch(()=>{
+    const t=document.createElement('textarea'); t.value=url;
+    document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+  });
+  showToast('공유 링크가 복사되었습니다!');
+};
+
+window.saveTokenInline=async function(campId){
+  const inp=document.getElementById('tkinp_'+campId); if(!inp) return;
+  const token=inp.value.trim();
+  const rd=REPORTS[campId];
+  if(!rd){ showToast('리포트 데이터를 찾을 수 없습니다'); return; }
+  if(!rd.cfg) rd.cfg={};
+  rd.cfg.token=token;
+  await saveRD(campId,rd);
+  // sync to campaigns list
+  const i=CAMPS.findIndex(c=>c.id===campId);
+  if(i>=0){ CAMPS[i]={...CAMPS[i]}; await set(ref(db,'campaigns'),CAMPS); }
+  showToast(token ? `✅ "${token}" 저장되었습니다` : '공유 코드가 삭제되었습니다');
+  renderTokenList();
+};
+
+// ════════════════════════════════════
+//  MONTHLY
+// ════════════════════════════════════
+function renderMonthly(){
+  renderMonthChips('month-chips-2');
+  const filtered=selMonth==='all'?CAMPS:CAMPS.filter(c=>c.start&&c.start.slice(0,7)===selMonth);
+  document.getElementById('mo-title').textContent=selMonth==='all'?'전체 캠페인 성과':`${moLabel(selMonth)} 캠페인 성과`;
+  let imp=0,click=0; filtered.forEach(c=>{const m=campMetrics(c);imp+=m.imp;click+=m.click;});
+  const ctr=imp>0?click/imp*100:0;
+  document.getElementById('mo-kpi').innerHTML=`
+    <div class="kpi gray"><div class="kl">캠페인</div><div class="kv" style="color:var(--t1)">${filtered.length}</div></div>
+    <div class="kpi blue"><div class="kl">총 노출수</div><div class="kv">${N(imp)}</div></div>
+    <div class="kpi blue"><div class="kl">총 클릭수</div><div class="kv">${N(click)}</div></div>
+    <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div></div>`;
+  const tb=document.getElementById('mo-tbody');
+  if(!filtered.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';return;}
+  let tI=0,tC=0;
+  tb.innerHTML=filtered.sort((a,b)=>(b.start||'').localeCompare(a.start||'')).map(c=>{
+    const m=campMetrics(c);tI+=m.imp;tC+=m.click;
+    return `<tr onclick="openReport('${c.id}')" style="cursor:pointer">
+      <td><strong>${c.campaign||''}</strong></td><td>${c.client||''}</td>
+      <td><span class="chip cb">${c.agency||''}</span></td>
+      <td style="font-size:11px;color:var(--t2)">${c.start||''} ~ ${c.end||''}</td>
+      <td class="r">${N(m.imp)}</td><td class="r">${N(m.click)}</td>
+      <td class="r">${ctrNoThr(m.ctr)}</td>
+    </tr>`;
+  }).join('');
+  const tc=tI>0?tC/tI*100:0;
+  tb.innerHTML+=`<tr class="sumr"><td colspan="4">합계</td><td class="r">${N(tI)}</td><td class="r">${N(tC)}</td><td class="r">${tc.toFixed(2)}%</td></tr>`;
+  const agMap={};
+  filtered.forEach(c=>{const ag=c.agency||'(미설정)';if(!agMap[ag])agMap[ag]={count:0,imp:0,click:0};const m=campMetrics(c);agMap[ag].count++;agMap[ag].imp+=m.imp;agMap[ag].click+=m.click;});
+  const at=document.getElementById('ag-tbody');
+  const rows=Object.entries(agMap).sort((a,b)=>b[1].imp-a[1].imp);
+  if(!rows.length){at.innerHTML='<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';return;}
+  let aI=0,aC=0,aCo=0;
+  at.innerHTML=rows.map(([ag,d])=>{aI+=d.imp;aC+=d.click;aCo+=d.count;
+    const c2=d.imp>0?d.click/d.imp*100:0;
+    return `<tr><td><span class="chip cb">${ag}</span></td><td class="r">${d.count}</td><td class="r">${N(d.imp)}</td><td class="r">${N(d.click)}</td><td class="r">${ctrNoThr(c2)}</td></tr>`;
+  }).join('');
+  at.innerHTML+=`<tr class="sumr"><td>합계</td><td class="r">${aCo}</td><td class="r">${N(aI)}</td><td class="r">${N(aC)}</td><td class="r">${(aI>0?aC/aI*100:0).toFixed(2)}%</td></tr>`;
+}
+
+// ════════════════════════════════════
+//  CRUD
+// ════════════════════════════════════
+window.openNewModal=function(){
+  document.getElementById('nm-title').textContent='새 캠페인 추가';
+  document.getElementById('nm-id').value='';
+  ['nm-client','nm-agency','nm-campaign','nm-start','nm-end','nm-prods'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('new-ovl').classList.add('open');
+};
+window.openEditModal=function(id){
+  const c=CAMPS.find(x=>x.id===id);if(!c)return;
+  document.getElementById('nm-title').textContent='캠페인 수정';
+  document.getElementById('nm-id').value=id;
+  document.getElementById('nm-client').value=c.client||'';
+  document.getElementById('nm-agency').value=c.agency||'';
+  document.getElementById('nm-campaign').value=c.campaign||'';
+  document.getElementById('nm-start').value=c.start||'';
+  document.getElementById('nm-end').value=c.end||'';
+  document.getElementById('nm-prods').value=(c.products||[]).join(', ');
+  document.getElementById('new-ovl').classList.add('open');
+};
+window.closeNewModal=function(){ document.getElementById('new-ovl').classList.remove('open'); };
+window.saveCampaign=async function(){
+  const client=document.getElementById('nm-client').value.trim();
+  const agency=document.getElementById('nm-agency').value.trim();
+  const campaign=document.getElementById('nm-campaign').value.trim();
+  const start=document.getElementById('nm-start').value;
+  const end=document.getElementById('nm-end').value;
+  const products=document.getElementById('nm-prods').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!client||!agency||!campaign||!start||!end){showToast('필수 항목을 모두 입력하세요');return;}
+  const eid=document.getElementById('nm-id').value;
+  if(eid){
+    const i=CAMPS.findIndex(c=>c.id===eid);
+    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign,start,end,products};
+      const rd=REPORTS[eid];if(rd){rd.cfg={client,agency,campaign,start,end};rd.products=products;await saveRD(eid,rd);}
+    }
+  } else {
+    const id='c_'+Date.now();
+    CAMPS.push({id,client,agency,campaign,start,end,products,created:Date.now()});
+    const rd={cfg:{client,campaign,agency,start,end},products,data:{}};
+    products.forEach(p=>rd.data[p]={}); await saveRD(id,rd);
+  }
+  await saveCamps(CAMPS);
+  window.closeNewModal();
+  showToast(eid?'수정되었습니다':'캠페인이 추가되었습니다');
+  renderAll();
+};
+window.delCamp=async function(id){
+  if(!confirm('이 캠페인을 삭제하시겠습니까?'))return;
+  CAMPS=CAMPS.filter(c=>c.id!==id);
+  delete REPORTS[id];
+  await saveCamps(CAMPS);
+  await remove(ref(db,'reports/'+id));
+  showToast('삭제되었습니다'); renderAll();
+};
+
+// ════════════════════════════════════
+//  SHARE & EXPORT
+// ════════════════════════════════════
+window.openShare=function(){
+  const token = curRD.cfg.token||'';
+  if(!token){
+    showToast('공유 코드를 먼저 설정하세요 (캠페인 설정 → 공유 코드)');
+    return;
+  }
+  const url=location.origin+location.pathname+'?id='+curCampId+'&view=agency&token='+encodeURIComponent(token);
+  document.getElementById('share-url').textContent=url;
+  document.getElementById('share-ovl').classList.add('open');
+};
+window.closeShare=function(){ document.getElementById('share-ovl').classList.remove('open'); };
+window.copyShare=function(){
+  const url=document.getElementById('share-url').textContent;
+  navigator.clipboard.writeText(url).catch(()=>{const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);});
+  showToast('링크가 복사되었습니다!'); window.closeShare();
+};
+window.doExport=function(){
+  const dates=getViewDates();
+  const rows=[['날짜','요일','상품','노출수','클릭수','CTR',...(isAgency?[]:['노출수(실제)','클릭수(실제)','CTR(실제)'])]];
+  dates.forEach(d=>{
+    const dow=getDow(d);
+    curRD.products.forEach(p=>{
+      const r=(curRD.data[p]||{})[d]||{};
+      const row=[d,dow,p,r.imp||'',r.click||'',r.ctr?r.ctr+'%':''];
+      if(!isAgency)row.push(r.imp_r||'',r.click_r||'',r.ctr_r?r.ctr_r+'%':'');
+      rows.push(row);
+    });
+  });
+  const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`${curRD.cfg.campaign||'report'}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+};
+window.exportAll=async function(){
+  const all={campaigns:CAMPS,thresholds:THR,reports:REPORTS};
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(all,null,2));
+  a.download=`runnble_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
+};
+
+// keyboard nav
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.activeElement.classList.contains('ni')){
+    e.preventDefault();
+    const all=[...document.querySelectorAll('.ni')];
+    const i=all.indexOf(document.activeElement);
+    if(i<all.length-1)all[i+1].focus();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
