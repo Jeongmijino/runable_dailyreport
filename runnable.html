@@ -230,19 +230,21 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 </div>
 
 <!-- 관리자 비밀번호 화면 -->
-<div class="lock-screen" id="lock-screen" style="display:none">
+<div class="lock-screen"<div class="lock-screen" id="lock-screen" style="display:none">
   <div class="lock-box">
     <div class="lock-logo">RUNNBLE</div>
     <div class="lock-sub">Ad Operations</div>
-    <div class="lock-title">관리자 비밀번호를 입력하세요</div>
+    <div class="lock-title">관리자 로그인</div>
+    <input class="lock-inp" type="email" id="lock-email" placeholder="이메일" style="margin-bottom:8px"
+      onkeydown="if(event.key==='Enter')document.getElementById('lock-pw').focus()">
     <div class="lock-inp-wrap">
-      <input class="lock-inp" type="password" id="lock-pw" placeholder=""
+      <input class="lock-inp" type="password" id="lock-pw" placeholder="비밀번호" style="margin-bottom:0"
         onkeydown="if(event.key==='Enter')tryLogin()">
       <button class="eye-btn" onclick="toggleEye('lock-pw','eye-admin')" type="button">
         <span id="eye-admin">👁</span>
       </button>
     </div>
-    <button class="lock-btn" onclick="tryLogin()">로그인</button>
+    <button class="lock-btn" onclick="tryLogin()" id="login-btn" style="margin-top:12px">로그인</button>
     <div class="lock-err" id="lock-err"></div>
   </div>
 </div>
@@ -283,6 +285,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   <div class="sb-bottom">
     <div class="sb-date" id="sb-date"></div>
     <div class="sb-sync"><span class="sync-dot" id="sync-dot"></span><span id="sync-txt" style="color:rgba(255,255,255,.4);font-size:10px">연결 중...</span></div>
+    <button onclick="adminSignOut()" style="margin-top:10px;font-family:var(--fn);font-size:10px;color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;padding:0;text-align:left">로그아웃</button>
   </div>
 </aside>
 
@@ -486,6 +489,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ── eye toggle (password visibility) ──
 window.toggleEye = function(inputId, iconId){
@@ -515,6 +519,9 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+// 탭 닫으면 즉시 로그아웃
+setPersistence(auth, browserSessionPersistence);
 
 // ════════════════════════════════════
 //  IN-MEMORY STORE (Firebase → local cache)
@@ -667,26 +674,51 @@ function startListeners(){
 
 // ════════════════════════════════════
 //  PASSWORD AUTH
-//  관리자 비밀번호 변경: 아래 ADMIN_PW 값 수정
 // ════════════════════════════════════
-const ADMIN_PW = 'runablead';
-const SESSION_KEY = 'runnble_admin_auth';
+//  AUTH — Firebase Authentication
+//  비밀번호는 코드에 없음. Firebase 콘솔에서만 관리.
+// ════════════════════════════════════
 
-function isAdminAuthed(){
-  return sessionStorage.getItem(SESSION_KEY) === 'ok';
+// Firebase Auth 상태 감지 — 이미 로그인된 경우 자동 진입
+function initAdminAuth(onAuthed, onNotAuthed){
+  onAuthStateChanged(auth, user => {
+    if(user){ onAuthed(user); }
+    else { onNotAuthed(); }
+  });
 }
 
-window.tryLogin = function(){
+window.tryLogin = async function(){
+  const email = document.getElementById('lock-email').value.trim();
   const pw = document.getElementById('lock-pw').value;
-  if(pw === ADMIN_PW){
-    sessionStorage.setItem(SESSION_KEY,'ok');
-    document.getElementById('lock-screen').style.display='none';
-    startAdminMode();
-  } else {
-    document.getElementById('lock-err').textContent='비밀번호가 올바르지 않습니다';
+  const errEl = document.getElementById('lock-err');
+  const btn = document.getElementById('login-btn');
+  if(!email || !pw){ errEl.textContent='이메일과 비밀번호를 입력하세요'; return; }
+  btn.textContent = '로그인 중...';
+  btn.disabled = true;
+  errEl.textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    // onAuthStateChanged가 자동으로 startAdminMode 호출
+  } catch(e) {
+    btn.textContent = '로그인';
+    btn.disabled = false;
+    if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'){
+      errEl.textContent = '이메일 또는 비밀번호가 올바르지 않습니다';
+    } else if(e.code==='auth/too-many-requests'){
+      errEl.textContent = '로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요';
+    } else {
+      errEl.textContent = '로그인 오류: ' + e.message;
+    }
     document.getElementById('lock-pw').value='';
     document.getElementById('lock-pw').focus();
   }
+};
+
+// 로그아웃
+window.adminSignOut = async function(){
+  if(!confirm('로그아웃 하시겠습니까?')) return;
+  await signOut(auth);
+  location.reload();
 };
 
 // 랩사 비밀번호 검증
@@ -736,14 +768,20 @@ async function init(){
     document.getElementById('agency-lock-screen').style.display='flex';
     setTimeout(()=>document.getElementById('agency-lock-pw').focus(),100);
   } else {
-    // 관리자: 비밀번호 확인
+    // 관리자: Firebase Auth 확인
     hideLoading();
-    if(isAdminAuthed()){
-      startAdminMode();
-    } else {
-      document.getElementById('lock-screen').style.display='flex';
-      setTimeout(()=>document.getElementById('lock-pw').focus(),100);
-    }
+    initAdminAuth(
+      // 이미 로그인된 상태
+      (user) => {
+        document.getElementById('lock-screen').style.display='none';
+        startAdminMode();
+      },
+      // 미로그인
+      () => {
+        document.getElementById('lock-screen').style.display='flex';
+        setTimeout(()=>document.getElementById('lock-email').focus(),100);
+      }
+    );
   }
 }
 
@@ -1471,11 +1509,92 @@ window.exportAll=async function(){
 
 // keyboard nav
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&document.activeElement.classList.contains('ni')){
+  const el = document.activeElement;
+  if(!el.classList.contains('ni')) return;
+
+  const allNi = [...document.querySelectorAll('.ni')];
+  const curIdx = allNi.indexOf(el);
+
+  // 한 행의 셀 수 계산 (전달값 3 + 실제값 3 = 6, 또는 랩사뷰 3)
+  // td.ni의 행 위치로 같은 행 셀 파악
+  const curTd = el.closest('td');
+  const curTr = el.closest('tr');
+
+  if(e.key==='Tab'){
     e.preventDefault();
-    const all=[...document.querySelectorAll('.ni')];
-    const i=all.indexOf(document.activeElement);
-    if(i<all.length-1)all[i+1].focus();
+    const next = e.shiftKey ? curIdx-1 : curIdx+1;
+    if(next>=0 && next<allNi.length) allNi[next].focus();
+
+  } else if(e.key==='Enter'){
+    e.preventDefault();
+    // Enter: 같은 열의 다음 행으로 이동
+    if(curTd && curTr){
+      const colIdx = [...curTr.cells].indexOf(curTd);
+      const tbody = curTr.closest('tbody');
+      const rows = [...tbody.querySelectorAll('tr:not(.sumr)')];
+      const rowIdx = rows.indexOf(curTr);
+      if(rowIdx>=0 && rowIdx<rows.length-1){
+        const nextRow = rows[rowIdx+1];
+        const nextTd = nextRow.cells[colIdx];
+        const nextInput = nextTd?.querySelector('.ni');
+        if(nextInput){ nextInput.focus(); nextInput.select(); return; }
+      }
+    }
+    // 같은 열 다음 행 없으면 다음 셀로
+    if(curIdx<allNi.length-1){ allNi[curIdx+1].focus(); allNi[curIdx+1].select(); }
+
+  } else if(e.key==='ArrowRight'){
+    e.preventDefault();
+    // 현재 셀에서 오른쪽 셀로
+    if(curTd && curTr){
+      const tds = [...curTr.cells];
+      const tdIdx = tds.indexOf(curTd);
+      for(let i=tdIdx+1;i<tds.length;i++){
+        const inp = tds[i].querySelector('.ni');
+        if(inp){ inp.focus(); inp.select(); return; }
+      }
+    }
+
+  } else if(e.key==='ArrowLeft'){
+    e.preventDefault();
+    if(curTd && curTr){
+      const tds = [...curTr.cells];
+      const tdIdx = tds.indexOf(curTd);
+      for(let i=tdIdx-1;i>=0;i--){
+        const inp = tds[i].querySelector('.ni');
+        if(inp){ inp.focus(); inp.select(); return; }
+      }
+    }
+
+  } else if(e.key==='ArrowDown'){
+    e.preventDefault();
+    if(curTd && curTr){
+      const colIdx = [...curTr.cells].indexOf(curTd);
+      const tbody = curTr.closest('tbody');
+      const rows = [...tbody.querySelectorAll('tr:not(.sumr)')];
+      const rowIdx = rows.indexOf(curTr);
+      if(rowIdx>=0 && rowIdx<rows.length-1){
+        const nextRow = rows[rowIdx+1];
+        const nextTd = nextRow.cells[colIdx];
+        const nextInput = nextTd?.querySelector('.ni');
+        if(nextInput){ nextInput.focus(); nextInput.select(); }
+      }
+    }
+
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    if(curTd && curTr){
+      const colIdx = [...curTr.cells].indexOf(curTd);
+      const tbody = curTr.closest('tbody');
+      const rows = [...tbody.querySelectorAll('tr:not(.sumr)')];
+      const rowIdx = rows.indexOf(curTr);
+      if(rowIdx>0){
+        const prevRow = rows[rowIdx-1];
+        const prevTd = prevRow.cells[colIdx];
+        const prevInput = prevTd?.querySelector('.ni');
+        if(prevInput){ prevInput.focus(); prevInput.select(); }
+      }
+    }
   }
 });
 
