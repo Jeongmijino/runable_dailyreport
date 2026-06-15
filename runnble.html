@@ -58,11 +58,9 @@ html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--t1)
 .btn-icon{background:none;border:1px solid var(--bdr);border-radius:var(--r);width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--t2);transition:all .12s}
 .btn-icon:hover{background:var(--bg)}
 .btn-icon.del:hover{background:var(--pnk-bg);color:var(--pnk);border-color:var(--pnk-bdr)}
-.mrow{padding:0 28px;display:flex;gap:4px;overflow-x:auto;margin-bottom:16px}
-.mrow::-webkit-scrollbar{height:2px}
-.mc{padding:5px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--surf);font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s}
-.mc.on{background:var(--t1);color:#fff;border-color:var(--t1)}
-.mc:hover:not(.on){border-color:var(--bdr2);background:var(--bg)}
+.mrow{padding:0 28px;display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.month-sel{font-family:var(--fn);font-size:13px;font-weight:600;padding:0 12px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);height:34px;cursor:pointer;min-width:140px}
+.month-sel:focus{outline:none;border-color:var(--blu)}
 .frow{padding:0 28px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .fsel{font-family:var(--fn);font-size:11px;padding:0 8px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);height:30px;cursor:pointer}
 .fsel:focus{outline:none;border-color:var(--blu)}
@@ -213,6 +211,10 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 .lock-inp:focus{border-color:rgba(255,255,255,.35)}
 .lock-btn{width:100%;font-family:var(--fn);font-size:13px;font-weight:700;padding:11px;border-radius:var(--r);border:none;background:var(--blu);color:#fff;cursor:pointer;transition:background .12s}
 .lock-btn:hover{background:#2f4cc4}
+.lock-inp-wrap{position:relative;margin-bottom:12px}
+.lock-inp-wrap .lock-inp{margin-bottom:0}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:16px;padding:0;line-height:1}
+.eye-btn:hover{color:rgba(255,255,255,.8)}
 .lock-err{font-size:12px;color:#ff6b6b;margin-top:10px;min-height:18px}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--t1);color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:700;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:300;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -227,16 +229,40 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   <div class="loading-text">데이터 불러오는 중...</div>
 </div>
 
-<!-- Password lock screen (admin only) -->
+<!-- 관리자 비밀번호 화면 -->
 <div class="lock-screen" id="lock-screen" style="display:none">
   <div class="lock-box">
     <div class="lock-logo">RUNNBLE</div>
     <div class="lock-sub">Ad Operations</div>
     <div class="lock-title">관리자 비밀번호를 입력하세요</div>
-    <input class="lock-inp" type="password" id="lock-pw" placeholder="••••••••"
-      onkeydown="if(event.key==='Enter')tryLogin()">
+    <div class="lock-inp-wrap">
+      <input class="lock-inp" type="password" id="lock-pw" placeholder=""
+        onkeydown="if(event.key==='Enter')tryLogin()">
+      <button class="eye-btn" onclick="toggleEye('lock-pw','eye-admin')" type="button">
+        <span id="eye-admin">👁</span>
+      </button>
+    </div>
     <button class="lock-btn" onclick="tryLogin()">로그인</button>
     <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
+
+<!-- 랩사 비밀번호 화면 -->
+<div class="lock-screen" id="agency-lock-screen" style="display:none">
+  <div class="lock-box">
+    <div class="lock-logo">RUNNBLE</div>
+    <div class="lock-sub">광고 성과 리포트</div>
+    <div id="agency-lock-camp" style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px"></div>
+    <div class="lock-title">비밀번호를 입력하세요</div>
+    <div class="lock-inp-wrap">
+      <input class="lock-inp" type="password" id="agency-lock-pw" placeholder="••••"
+        onkeydown="if(event.key==='Enter')tryAgencyLogin()">
+      <button class="eye-btn" onclick="toggleEye('agency-lock-pw','eye-agency')" type="button">
+        <span id="eye-agency">👁</span>
+      </button>
+    </div>
+    <button class="lock-btn" onclick="tryAgencyLogin()">확인</button>
+    <div class="lock-err" id="agency-lock-err"></div>
   </div>
 </div>
 
@@ -274,7 +300,10 @@ tr.sumr td.rc .ci{color:#fcc2d7}
         <button class="btn btn-p" onclick="openNewModal()">+ 새 캠페인</button>
       </div>
     </div>
-    <div class="mrow" id="month-chips"></div>
+    <div class="mrow">
+      <span style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em">캠페인 기간</span>
+      <select class="month-sel" id="month-sel" onchange="selMo(this.value)"></select>
+    </div>
     <div class="frow">
       <span style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em">랩사</span>
       <select class="fsel" id="ag-filter" onchange="renderList()"><option value="">전체</option></select>
@@ -309,24 +338,42 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div><div class="rh-title" id="rh-title">리포트</div><div class="rh-chips" id="rh-chips"></div></div>
     </div>
     <div class="scard" id="r-setup">
-      <div class="sh">캠페인 설정</div>
-      <div class="sgrid">
-        <div class="fld"><label>광고주</label><input type="text" id="rc-client"></div>
-        <div class="fld"><label>캠페인명</label><input type="text" id="rc-campaign"></div>
-        <div class="fld"><label>랩사명</label><input type="text" id="rc-agency"></div>
-        <div class="fld"><label>시작일</label><input type="date" id="rc-start" onchange="rDateChange()"></div>
-        <div class="fld"><label>종료일</label><input type="date" id="rc-end" onchange="rDateChange()"></div>
-        <div class="fld">
-          <label>공유 코드 <span style="font-weight:400;color:var(--t3)">(랩사 링크 접근 비밀번호)</span></label>
-          <div style="display:flex;gap:6px">
-            <input type="text" id="rc-token" placeholder="예: incross2026" style="flex:1">
-            <button class="btn btn-sm" onclick="genToken()" title="랜덤 생성">🎲 랜덤</button>
-          </div>
+      <!-- 읽기 전용 뷰 -->
+      <div id="r-setup-view" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="sh" style="margin-bottom:0">캠페인 설정</div>
+          <button class="btn btn-sm" onclick="rSetupEditMode()">수정</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">광고주</div><div id="rv-client" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">캠페인명</div><div id="rv-campaign" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">랩사명</div><div id="rv-agency" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">시작일</div><div id="rv-start" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">종료일</div><div id="rv-end" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">공유 코드</div><div id="rv-token" style="font-size:13px;font-weight:600;color:var(--blu);font-family:monospace"></div></div>
         </div>
       </div>
-      <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
-        <button class="btn btn-p" onclick="rSaveCfg()">저장하기</button>
-        <span id="save-status" style="font-size:11px;color:var(--grn);font-weight:600"></span>
+      <!-- 편집 뷰 -->
+      <div id="r-setup-edit">
+        <div class="sh">캠페인 설정</div>
+        <div class="sgrid">
+          <div class="fld"><label>광고주</label><input type="text" id="rc-client"></div>
+          <div class="fld"><label>캠페인명</label><input type="text" id="rc-campaign"></div>
+          <div class="fld"><label>랩사명</label><input type="text" id="rc-agency"></div>
+          <div class="fld"><label>시작일</label><input type="date" id="rc-start" onchange="rDateChange()"></div>
+          <div class="fld"><label>종료일</label><input type="date" id="rc-end" onchange="rDateChange()"></div>
+          <div class="fld">
+            <label>공유 코드 <span style="font-weight:400;color:var(--t3)">(랩사 링크 접근 비밀번호)</span></label>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="rc-token" placeholder="예: incross2026" style="flex:1">
+              <button class="btn btn-sm" onclick="genToken()" title="랜덤 생성">🎲 랜덤</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+          <button class="btn btn-p" onclick="rSaveCfg()">저장하기</button>
+          <span id="save-status" style="font-size:11px;color:var(--grn);font-weight:600"></span>
+        </div>
       </div>
       <div class="hr"></div>
       <div class="sh" style="margin-bottom:8px">광고 상품</div>
@@ -344,7 +391,10 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   <!-- MONTHLY -->
   <div id="v-monthly" style="display:none">
     <div class="ph"><div class="ph-l"><div class="ey">Performance Report</div><div class="pt">월별 성과</div></div></div>
-    <div class="mrow" id="month-chips-2"></div>
+    <div class="mrow">
+      <span style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em">캠페인 기간</span>
+      <select class="month-sel" id="month-sel-2" onchange="selMo(this.value)"></select>
+    </div>
     <div class="krow" id="mo-kpi"></div>
     <div class="mvg">
       <div><div class="mvt" id="mo-title">캠페인 성과</div>
@@ -436,6 +486,20 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ── eye toggle (password visibility) ──
+window.toggleEye = function(inputId, iconId){
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if(!inp) return;
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    if(ico) ico.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    if(ico) ico.textContent = '👁';
+  }
+};
 
 // ════════════════════════════════════
 //  FIREBASE CONFIG
@@ -603,9 +667,9 @@ function startListeners(){
 
 // ════════════════════════════════════
 //  PASSWORD AUTH
-//  비밀번호를 바꾸려면 아래 ADMIN_PW 값을 수정하세요
+//  관리자 비밀번호 변경: 아래 ADMIN_PW 값 수정
 // ════════════════════════════════════
-const ADMIN_PW = 'runablead';  // ← 원하는 비밀번호로 변경
+const ADMIN_PW = 'runablead';
 const SESSION_KEY = 'runnble_admin_auth';
 
 function isAdminAuthed(){
@@ -625,6 +689,27 @@ window.tryLogin = function(){
   }
 };
 
+// 랩사 비밀번호 검증
+let pendingAgencyCampId = null;
+
+window.tryAgencyLogin = function(){
+  const pw = document.getElementById('agency-lock-pw').value.trim();
+  const rd = REPORTS[pendingAgencyCampId];
+  const campToken = (rd&&rd.cfg&&rd.cfg.token)||'';
+  if(!campToken){
+    document.getElementById('agency-lock-err').textContent='공유 코드가 설정되지 않은 캠페인입니다. 관리자에게 문의하세요.';
+    return;
+  }
+  if(pw === campToken){
+    document.getElementById('agency-lock-screen').style.display='none';
+    openReport(pendingAgencyCampId);
+  } else {
+    document.getElementById('agency-lock-err').textContent='비밀번호가 올바르지 않습니다';
+    document.getElementById('agency-lock-pw').value='';
+    document.getElementById('agency-lock-pw').focus();
+  }
+};
+
 // ════════════════════════════════════
 //  INIT
 // ════════════════════════════════════
@@ -634,25 +719,22 @@ async function init(){
   isAgency=p.get('view')==='agency';
 
   if(isAgency){
-    // 랩사 공유 링크: 사이드바 완전 제거, 탈출 불가
+    // 랩사 공유 링크: 사이드바 제거, 탈출 불가
     document.getElementById('sidebar').style.display='none';
     document.querySelector('.app').style.gridTemplateColumns='1fr';
-    // 뒤로가기/URL변조로 관리자 진입 차단
     history.pushState(null,'',location.href);
     window.addEventListener('popstate',()=>history.pushState(null,'',location.href));
     startListeners();
     await waitForData();
     hideLoading();
     if(!id){ showAgencyError('공유 링크가 올바르지 않습니다'); return; }
-    // 토큰 검증
-    const urlToken = p.get('token')||'';
-    const rd = REPORTS[id];
-    const campToken = (rd&&rd.cfg&&rd.cfg.token)||'';
-    if(!campToken || urlToken !== campToken){
-      showAgencyError('접근 권한이 없습니다. 올바른 공유 링크를 사용해주세요.');
-      return;
-    }
-    openReport(id);
+    // 비밀번호 입력창 표시
+    pendingAgencyCampId = id;
+    const camp = CAMPS.find(c=>c.id===id);
+    const campName = camp ? camp.campaign : '';
+    if(campName) document.getElementById('agency-lock-camp').textContent = campName;
+    document.getElementById('agency-lock-screen').style.display='flex';
+    setTimeout(()=>document.getElementById('agency-lock-pw').focus(),100);
   } else {
     // 관리자: 비밀번호 확인
     hideLoading();
@@ -722,7 +804,7 @@ function showView(v){
   document.getElementById('sb-stg').className='sbi'+(v==='settings'?' on':'');
   document.getElementById('main').scrollTop=0;
 }
-function gotoList(){ showView('list'); curCampId=null; curRD=null; history.replaceState(null,'',location.pathname); renderAll(); }
+function gotoList(){ showView('list'); curCampId=null; curRD=null; history.replaceState(null,'',location.pathname); const agf=document.getElementById('ag-filter'); if(agf) agf.value=''; renderAll(); }
 function gotoMonthly(){ showView('monthly'); renderSidebar(); renderMonthChips('month-chips-2'); renderMonthly(); }
 function gotoSettings(){ showView('settings'); renderSettings(); renderTokenList(); }
 window.gotoList=gotoList; window.gotoMonthly=gotoMonthly; window.gotoSettings=gotoSettings;
@@ -749,10 +831,13 @@ function getMonths(){
   const ms=new Set(); CAMPS.forEach(c=>{if(c.start)ms.add(c.start.slice(0,7));});
   return ['all',...Array.from(ms).sort().reverse()];
 }
-function moLabel(m){ if(m==='all') return '전체'; const[y,mo]=m.split('-'); return `${y}.${parseInt(mo)}`; }
+function moLabel(m){ if(m==='all') return '전체'; const[y,mo]=m.split('-'); return `${y}년 ${parseInt(mo)}월`; }
 function renderMonthChips(id){
-  const el=document.getElementById(id); if(!el) return;
-  el.innerHTML=getMonths().map(m=>`<button class="mc${selMonth===m?' on':''}" onclick="selMo('${m}')">${moLabel(m)}</button>`).join('');
+  // id mapping: month-chips→month-sel, month-chips-2→month-sel-2
+  const selId = id==='month-chips' ? 'month-sel' : 'month-sel-2';
+  const el=document.getElementById(selId); if(!el) return;
+  const months=getMonths();
+  el.innerHTML=months.map(m=>`<option value="${m}"${selMonth===m?' selected':''}>${moLabel(m)}</option>`).join('');
 }
 window.selMo=function(m){ selMonth=m; renderMonthChips('month-chips'); renderMonthChips('month-chips-2'); if(curView==='list'){renderListKpi();renderList();}else if(curView==='monthly')renderMonthly(); };
 
@@ -813,7 +898,7 @@ function renderListKpi(){
     <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div><div class="ks">click-through rate</div></div>`;
 }
 function renderList(){
-  const list=getFiltered().sort((a,b)=>(b.start||'').localeCompare(a.start||''));
+  const list=getFiltered().sort((a,b)=>(a.start||'').localeCompare(b.start||''));
   const el=document.getElementById('clist');
   if(!list.length){el.innerHTML='<div class="empty">📋<br><br>캠페인이 없습니다<br><span style="font-size:12px">새 캠페인을 추가해보세요</span></div>';return;}
   el.innerHTML=list.map(c=>{
@@ -822,7 +907,7 @@ function renderList(){
       <div class="cdot ${act?'on':'off'}"></div>
       <div class="cbody">
         <div class="cname">${c.campaign||'(이름 없음)'}</div>
-        <div class="cmeta"><span>${c.client||''}</span><span class="chip cb">${c.agency||''}</span><span>${c.start||''} ~ ${c.end||''}</span><span>상품 ${(c.products||[]).length}개</span></div>
+        <div class="cmeta"><span class="chip cb">${c.agency||''}</span><span>${c.client||''}</span><span>${c.start||''} ~ ${c.end||''}</span><span>상품 ${(c.products||[]).length}개</span></div>
       </div>
       <div class="cstats">
         <div class="cs"><div class="csv">${N(m.imp)}</div><div class="csl">노출</div></div>
@@ -882,7 +967,35 @@ function fillRSetup(){
   document.getElementById('rc-start').value=c.start||'';
   document.getElementById('rc-end').value=c.end||'';
   document.getElementById('rc-token').value=c.token||'';
+  // 데이터가 있으면 읽기 전용 뷰, 없으면 편집 뷰
+  if(c.client||c.campaign){
+    rSetupViewMode();
+  } else {
+    rSetupEditMode();
+  }
 }
+function rSetupViewMode(){
+  const c=curRD.cfg;
+  document.getElementById('rv-client').textContent=c.client||'—';
+  document.getElementById('rv-campaign').textContent=c.campaign||'—';
+  document.getElementById('rv-agency').textContent=c.agency||'—';
+  document.getElementById('rv-start').textContent=c.start||'—';
+  document.getElementById('rv-end').textContent=c.end||'—';
+  document.getElementById('rv-token').textContent=c.token||'(미설정)';
+  document.getElementById('r-setup-view').style.display='';
+  document.getElementById('r-setup-edit').style.display='none';
+}
+window.rSetupEditMode=function(){
+  const c=curRD.cfg;
+  document.getElementById('rc-client').value=c.client||'';
+  document.getElementById('rc-campaign').value=c.campaign||'';
+  document.getElementById('rc-agency').value=c.agency||'';
+  document.getElementById('rc-start').value=c.start||'';
+  document.getElementById('rc-end').value=c.end||'';
+  document.getElementById('rc-token').value=c.token||'';
+  document.getElementById('r-setup-view').style.display='none';
+  document.getElementById('r-setup-edit').style.display='';
+};
 window.rSaveCfg=async function(){
   curRD.cfg.client=document.getElementById('rc-client').value;
   curRD.cfg.campaign=document.getElementById('rc-campaign').value;
@@ -896,9 +1009,8 @@ window.rSaveCfg=async function(){
   if(statusEl){
     statusEl.textContent='저장되었습니다';
     statusEl.style.color='var(--grn)';
-    setTimeout(()=>{ statusEl.textContent=''; },3000);
+    setTimeout(()=>{ statusEl.textContent=''; rSetupViewMode(); },800);
   }
-  showToast('저장되었습니다');
 };
 window.rDateChange=function(){
   curRD.cfg.start=document.getElementById('rc-start').value;
@@ -1139,36 +1251,47 @@ window.thrAdd=function(){
   renderSettings(); showToast('추가되었습니다');
 };
 
-function renderTokenList(){
+window.renderTokenList = function renderTokenList(){
   const el=document.getElementById('token-list'); if(!el) return;
   const q=(document.getElementById('token-search')?.value||'').toLowerCase().trim();
-  let list = CAMPS;
-  if(q) list = CAMPS.filter(c=>(c.campaign||'').toLowerCase().includes(q)||(c.agency||'').toLowerCase().includes(q)||(c.client||'').toLowerCase().includes(q));
-  if(!list.length){
-    el.innerHTML=`<div style="font-size:12px;color:var(--t3);padding:16px 0">${q?'검색 결과가 없습니다':'등록된 캠페인이 없습니다'}</div>`;
+  // 검색어 없으면 전체, 있으면 실시간 필터
+  const list = q
+    ? CAMPS.filter(c=>(c.campaign||'').toLowerCase().includes(q)||(c.agency||'').toLowerCase().includes(q)||(c.client||'').toLowerCase().includes(q))
+    : CAMPS;
+  if(!CAMPS.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:16px 0">등록된 캠페인이 없습니다</div>';
+    return;
+  }
+  if(q && !list.length){
+    el.innerHTML=`<div style="font-size:12px;color:var(--t3);padding:16px 0">🔍 "<strong>${q}</strong>"에 해당하는 캠페인이 없습니다</div>`;
     return;
   }
   el.innerHTML = list.map(c=>{
     const rd = REPORTS[c.id];
     const token = (rd&&rd.cfg&&rd.cfg.token)||'';
     const shareUrl = token
-      ? `${location.origin}${location.pathname}?id=${c.id}&view=agency&token=${encodeURIComponent(token)}`
+      ? `${location.origin}${location.pathname}?id=${c.id}&view=agency`
       : '';
-    return `<div class="token-row">
+    const isSaved = !!token;
+    return `<div class="token-row" id="trow_${c.id}">
       <div class="token-camp">
         <div class="token-camp-name">${c.campaign||'(이름 없음)'}</div>
         <div class="token-camp-meta"><span class="chip cb" style="font-size:9px;padding:1px 5px">${c.agency||''}</span> ${c.start||''} ~ ${c.end||''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <input type="text" id="tkinp_${c.id}" value="${token}" placeholder="코드 입력"
-          style="font-family:monospace;font-size:12px;font-weight:700;width:130px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:5px;color:var(--blu);background:#fff;height:30px"
-          onkeydown="if(event.key==='Enter')saveTokenInline('${c.id}')">
-        <button class="btn btn-sm btn-p" onclick="saveTokenInline('${c.id}')">저장</button>
-        ${token ? `<button class="btn btn-sm" onclick="copyTokenUrl('${shareUrl.replace(/'/g,"\\'")}')">🔗 복사</button>` : ''}
+        ${isSaved ? `
+          <span style="font-size:12px;font-weight:600;color:var(--blu);font-family:monospace;letter-spacing:.04em">${token}</span>
+          <button class="btn btn-sm" onclick="editTokenInline('${c.id}','${token}')">수정</button>
+        ` : `
+          <input type="text" id="tkinp_${c.id}" value="" placeholder="코드 입력"
+            style="font-family:monospace;font-size:12px;font-weight:700;width:130px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:5px;color:var(--blu);background:#fff;height:30px"
+            onkeydown="if(event.key==='Enter')saveTokenInline('${c.id}')">
+          <button class="btn btn-sm btn-p" onclick="saveTokenInline('${c.id}')">저장</button>
+        `}
       </div>
     </div>`;
   }).join('');
-}
+};
 
 window.copyTokenUrl=function(url){
   navigator.clipboard.writeText(url).catch(()=>{
@@ -1186,11 +1309,24 @@ window.saveTokenInline=async function(campId){
   if(!rd.cfg) rd.cfg={};
   rd.cfg.token=token;
   await saveRD(campId,rd);
-  // sync to campaigns list
   const i=CAMPS.findIndex(c=>c.id===campId);
   if(i>=0){ CAMPS[i]={...CAMPS[i]}; await set(ref(db,'campaigns'),CAMPS); }
-  showToast(token ? `✅ "${token}" 저장되었습니다` : '공유 코드가 삭제되었습니다');
+  showToast(token ? `"${token}" 저장되었습니다` : '공유 코드가 삭제되었습니다');
   renderTokenList();
+};
+
+// 수정 버튼 클릭 시 해당 행만 편집 모드로 전환
+window.editTokenInline=function(campId, currentToken){
+  const row=document.getElementById('trow_'+campId); if(!row) return;
+  const actionDiv=row.querySelector('div:last-child');
+  actionDiv.innerHTML=`
+    <input type="text" id="tkinp_${campId}" value="${currentToken}"
+      style="font-family:monospace;font-size:12px;font-weight:600;width:130px;padding:4px 8px;border:1px solid var(--blu-bdr);border-radius:5px;color:var(--blu);background:#fff;height:30px"
+      onkeydown="if(event.key==='Enter')saveTokenInline('${campId}')">
+    <button class="btn btn-sm btn-p" onclick="saveTokenInline('${campId}')">완료</button>
+    <button class="btn btn-sm" onclick="renderTokenList()">취소</button>`;
+  document.getElementById('tkinp_'+campId).focus();
+  document.getElementById('tkinp_'+campId).select();
 };
 
 // ════════════════════════════════════
@@ -1210,7 +1346,7 @@ function renderMonthly(){
   const tb=document.getElementById('mo-tbody');
   if(!filtered.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';return;}
   let tI=0,tC=0;
-  tb.innerHTML=filtered.sort((a,b)=>(b.start||'').localeCompare(a.start||'')).map(c=>{
+  tb.innerHTML=filtered.sort((a,b)=>(a.start||'').localeCompare(b.start||'')).map(c=>{
     const m=campMetrics(c);tI+=m.imp;tC+=m.click;
     return `<tr onclick="openReport('${c.id}')" style="cursor:pointer">
       <td><strong>${c.campaign||''}</strong></td><td>${c.client||''}</td>
@@ -1300,7 +1436,7 @@ window.openShare=function(){
     showToast('공유 코드를 먼저 설정하세요 (캠페인 설정 → 공유 코드)');
     return;
   }
-  const url=location.origin+location.pathname+'?id='+curCampId+'&view=agency&token='+encodeURIComponent(token);
+  const url=location.origin+location.pathname+'?id='+curCampId+'&view=agency';
   document.getElementById('share-url').textContent=url;
   document.getElementById('share-ovl').classList.add('open');
 };
