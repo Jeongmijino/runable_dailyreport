@@ -136,7 +136,7 @@ tbody td{height:38px;padding:0;vertical-align:middle}
 .ci.c{justify-content:center}
 td.dc{background:#f7f9ff}
 td.rc{background:#fff7fb}
-.ni{font-family:var(--fn);font-size:12px;width:100%;height:100%;border:none;background:transparent;color:var(--t1);text-align:center;padding:0;outline:none;-moz-appearance:textfield}
+.ni{font-family:var(--fn);font-size:12px;width:100%;height:100%;border:none;background:transparent;color:var(--t1);text-align:center;padding:0;outline:none;-moz-appearance:textfield;user-select:text;-webkit-user-drag:none;draggable:false}
 .ni::-webkit-outer-spin-button,.ni::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .ni:focus{background:#fffde8;border-radius:3px}
 td.dc .ni{color:var(--blu)}
@@ -644,14 +644,23 @@ function startListeners(){
     if(dbReady){
       if(curView==='list') renderAll();
       if(curView==='monthly') renderMonthly();
-      // if report is open, refresh it (but keep input focus)
+      // 리포트 열려있을 때: 입력 중이면 테이블 리렌더링 안 함
       if(curView==='report' && curRD && curCampId){
         const fresh = REPORTS[curCampId];
         if(fresh){
-          // merge: keep local unsaved edits if they exist, otherwise use fresh
-          curRD = fresh;
-          clearTimeout(window._refreshTimer);
-          window._refreshTimer = setTimeout(()=>{ renderRMetrics(); renderRTable(); }, 200);
+          const activeEl = document.activeElement;
+          const isEditingCell = activeEl && activeEl.classList.contains('ni');
+          if(!isEditingCell){
+            // 셀 입력 중이 아닐 때만 테이블 갱신
+            curRD = fresh;
+            clearTimeout(window._refreshTimer);
+            window._refreshTimer = setTimeout(()=>{ renderRMetrics(); renderRTable(); }, 200);
+          } else {
+            // 입력 중이면 메모리만 업데이트, 화면은 그대로
+            curRD = fresh;
+            clearTimeout(window._refreshTimer);
+            window._refreshTimer = setTimeout(()=>{ renderRMetrics(); }, 200);
+          }
         }
       }
     }
@@ -1158,7 +1167,7 @@ function niTd(val,ed,isReal,p,d,f){
   if(ed){
     const id=`c_${p}_${d}_${f}`.replace(/[\s\/\.]/g,'_');
     const isCtr=f.includes('ctr');
-    return `<td class="${cls}"><input class="ni${isCtr?' auto':''}"${isCtr?' data-auto="1"':''} id="${id}" type="text" inputmode="decimal" value="${val||''}" onchange="onCell('${esc(p)}','${d}','${f}',this.value)" onfocus="this.select();this.classList.remove('auto')" onblur="if(this.dataset.auto)this.classList.add('auto')"></td>`;
+    return `<td class="${cls}"><input class="ni${isCtr?' auto':''}"${isCtr?' data-auto="1"':''} id="${id}" type="text" inputmode="decimal" value="${val||''}" oninput="onCell('${esc(p)}','${d}','${f}',this.value)" onfocus="this.select()" onclick="this.select()"></td>`;
   }
   if(f.includes('ctr')) return `<td class="${cls}"><div class="ci c">${ctrDisplay(val,p)}</div></td>`;
   return `<td class="${cls}"><div class="ci c">${val?(+val).toLocaleString('ko-KR'):'—'}</div></td>`;
@@ -1240,25 +1249,56 @@ function renderRTable(){
   wrap.innerHTML=`<table><thead>${hg}${hc}</thead><tbody>${body}</tbody></table>`;
 }
 
-window.onCell=async function(p,d,f,v){
-  if(!curRD.data[p])curRD.data[p]={};
-  if(!curRD.data[p][d])curRD.data[p][d]={};
+// undo 히스토리 (셀별 최대 10개)
+const UNDO_HISTORY = {};
+const MAX_UNDO = 10;
+let isUndoing = false; // undo 중 재귀 push 방지
+
+function pushUndo(cellId, oldVal){
+  if(isUndoing) return; // undo 중에는 히스토리 쌓지 않음
+  if(!UNDO_HISTORY[cellId]) UNDO_HISTORY[cellId]=[];
+  // 직전 값과 동일하면 push 안 함
+  const hist = UNDO_HISTORY[cellId];
+  if(hist.length > 0 && hist[hist.length-1] === oldVal) return;
+  hist.push(oldVal);
+  if(hist.length > MAX_UNDO) hist.shift();
+}
+
+window.onCell=function(p,d,f,v){
+  if(!curRD.data[p]) curRD.data[p]={};
+  if(!curRD.data[p][d]) curRD.data[p][d]={};
+
+  // undo 히스토리에 이전 값 저장
+  const cellId = `c_${p}_${d}_${f}`.replace(/[\s\/\.]/g,'_');
+  const oldVal = curRD.data[p][d][f]||'';
+  if(oldVal !== v) pushUndo(cellId, oldVal);
+
   curRD.data[p][d][f]=v;
   const row=curRD.data[p][d];
-  if(f==='imp'||f==='click'){
-    const i2=+row.imp||0,c2=+row.click||0;
-    if(i2>0){row.ctr=(c2/i2*100).toFixed(2);const el=document.getElementById(`c_${p}_${d}_ctr`.replace(/[\s\/\.]/g,'_'));if(el){el.value=row.ctr;el.dataset.auto='1';}}
+
+  // CTR 자동계산 — 입력이 완료된 숫자일 때만 계산
+  function calcCtr(impKey, clickKey, ctrKey){
+    const imp=+row[impKey]||0, clk=+row[clickKey]||0;
+    if(imp>0){
+      const ctr=(clk/imp*100).toFixed(2);
+      row[ctrKey]=ctr;
+      const ctrId=`c_${p}_${d}_${ctrKey}`.replace(/[\s\/\.]/g,'_');
+      const ctrEl=document.getElementById(ctrId);
+      if(ctrEl && document.activeElement!==ctrEl){
+        ctrEl.value=ctr;
+      }
+    }
   }
-  if(f==='imp_r'||f==='click_r'){
-    const i2=+row.imp_r||0,c2=+row.click_r||0;
-    if(i2>0){row.ctr_r=(c2/i2*100).toFixed(2);const el=document.getElementById(`c_${p}_${d}_ctr_r`.replace(/[\s\/\.]/g,'_'));if(el){el.value=row.ctr_r;el.dataset.auto='1';}}
-  }
-  // Debounce Firebase write (300ms after last keystroke)
+
+  if(f==='imp'||f==='click') calcCtr('imp','click','ctr');
+  if(f==='imp_r'||f==='click_r') calcCtr('imp_r','click_r','ctr_r');
+
+  // debounce Firebase 저장 (600ms)
   clearTimeout(window._cellTimer);
   window._cellTimer=setTimeout(async()=>{
     await saveRD(curCampId,curRD);
     renderRMetrics();
-  },300);
+  }, 600);
 };
 
 // ════════════════════════════════════
@@ -1510,94 +1550,120 @@ window.exportAll=async function(){
 // keyboard nav
 document.addEventListener('keydown',e=>{
   const el = document.activeElement;
+
+  // Ctrl+Z : 셀 값 되돌리기
+  if((e.ctrlKey||e.metaKey) && e.key==='z' && el.classList.contains('ni')){
+    e.preventDefault();
+    const cellId = el.id;
+    if(UNDO_HISTORY[cellId] && UNDO_HISTORY[cellId].length>0){
+      const prev = UNDO_HISTORY[cellId].pop();
+      el.value = prev;
+      isUndoing = true;
+      el.dispatchEvent(new Event('input')); // onCell 호출 (push 없이)
+      isUndoing = false;
+      showToast(`↩ 되돌렸습니다 (${UNDO_HISTORY[cellId]?.length||0}번 더 가능)`);
+    } else {
+      showToast('더 이상 되돌릴 수 없습니다');
+    }
+    return;
+  }
+
   if(!el.classList.contains('ni')) return;
 
-  const allNi = [...document.querySelectorAll('.ni')];
-  const curIdx = allNi.indexOf(el);
-
-  // 한 행의 셀 수 계산 (전달값 3 + 실제값 3 = 6, 또는 랩사뷰 3)
-  // td.ni의 행 위치로 같은 행 셀 파악
   const curTd = el.closest('td');
   const curTr = el.closest('tr');
+  if(!curTd || !curTr) return;
+
+  // 입력 가능한 .ni 셀만 (readonly 제외)
+  function getInputsInRow(tr){
+    return [...tr.querySelectorAll('td .ni')].filter(i=>!i.readOnly);
+  }
+  function getInputsInCol(colIdx, tbody){
+    return [...tbody.querySelectorAll('tr:not(.sumr)')].map(tr=>{
+      const td = tr.cells[colIdx];
+      return td ? td.querySelector('.ni') : null;
+    }).filter(Boolean);
+  }
+
+  const tbody = curTr.closest('tbody');
+  const allRows = tbody ? [...tbody.querySelectorAll('tr:not(.sumr)')] : [];
+  const rowIdx = allRows.indexOf(curTr);
+  const colIdx = [...curTr.cells].indexOf(curTd);
 
   if(e.key==='Tab'){
     e.preventDefault();
-    const next = e.shiftKey ? curIdx-1 : curIdx+1;
-    if(next>=0 && next<allNi.length) allNi[next].focus();
+    // Tab: 같은 행 내에서만 좌우 이동, 행 끝이면 다음 행 첫 칸
+    const rowInputs = getInputsInRow(curTr);
+    const posInRow = rowInputs.indexOf(el);
+    if(!e.shiftKey){
+      if(posInRow < rowInputs.length-1){
+        rowInputs[posInRow+1].focus(); rowInputs[posInRow+1].select();
+      } else if(rowIdx < allRows.length-1){
+        const nextRowInputs = getInputsInRow(allRows[rowIdx+1]);
+        if(nextRowInputs.length){ nextRowInputs[0].focus(); nextRowInputs[0].select(); }
+      }
+    } else {
+      if(posInRow > 0){
+        rowInputs[posInRow-1].focus(); rowInputs[posInRow-1].select();
+      } else if(rowIdx > 0){
+        const prevRowInputs = getInputsInRow(allRows[rowIdx-1]);
+        if(prevRowInputs.length){ prevRowInputs[prevRowInputs.length-1].focus(); prevRowInputs[prevRowInputs.length-1].select(); }
+      }
+    }
 
   } else if(e.key==='Enter'){
     e.preventDefault();
-    // Enter: 같은 열의 다음 행으로 이동
-    if(curTd && curTr){
-      const colIdx = [...curTr.cells].indexOf(curTd);
-      const tbody = curTr.closest('tbody');
-      const rows = [...tbody.querySelectorAll('tr:not(.sumr)')];
-      const rowIdx = rows.indexOf(curTr);
-      if(rowIdx>=0 && rowIdx<rows.length-1){
-        const nextRow = rows[rowIdx+1];
-        const nextTd = nextRow.cells[colIdx];
-        const nextInput = nextTd?.querySelector('.ni');
-        if(nextInput){ nextInput.focus(); nextInput.select(); return; }
-      }
+    // Enter: 같은 열에서 아래 행으로
+    if(rowIdx < allRows.length-1){
+      const nextTd = allRows[rowIdx+1].cells[colIdx];
+      const nextInp = nextTd?.querySelector('.ni');
+      if(nextInp && !nextInp.readOnly){ nextInp.focus(); nextInp.select(); return; }
     }
-    // 같은 열 다음 행 없으면 다음 셀로
-    if(curIdx<allNi.length-1){ allNi[curIdx+1].focus(); allNi[curIdx+1].select(); }
+    // 없으면 다음 칸
+    const rowInputs = getInputsInRow(curTr);
+    const posInRow = rowInputs.indexOf(el);
+    if(posInRow < rowInputs.length-1){ rowInputs[posInRow+1].focus(); rowInputs[posInRow+1].select(); }
 
   } else if(e.key==='ArrowRight'){
-    e.preventDefault();
-    // 현재 셀에서 오른쪽 셀로
-    if(curTd && curTr){
-      const tds = [...curTr.cells];
-      const tdIdx = tds.indexOf(curTd);
-      for(let i=tdIdx+1;i<tds.length;i++){
-        const inp = tds[i].querySelector('.ni');
-        if(inp){ inp.focus(); inp.select(); return; }
-      }
+    // 커서가 맨 오른쪽 끝일 때만 다음 셀로
+    if(el.selectionStart === el.value.length && el.selectionEnd === el.value.length){
+      e.preventDefault();
+      const rowInputs = getInputsInRow(curTr);
+      const pos = rowInputs.indexOf(el);
+      if(pos < rowInputs.length-1){ rowInputs[pos+1].focus(); rowInputs[pos+1].select(); }
     }
 
   } else if(e.key==='ArrowLeft'){
-    e.preventDefault();
-    if(curTd && curTr){
-      const tds = [...curTr.cells];
-      const tdIdx = tds.indexOf(curTd);
-      for(let i=tdIdx-1;i>=0;i--){
-        const inp = tds[i].querySelector('.ni');
-        if(inp){ inp.focus(); inp.select(); return; }
-      }
+    // 커서가 맨 왼쪽 끝일 때만 이전 셀로
+    if(el.selectionStart === 0 && el.selectionEnd === 0){
+      e.preventDefault();
+      const rowInputs = getInputsInRow(curTr);
+      const pos = rowInputs.indexOf(el);
+      if(pos > 0){ rowInputs[pos-1].focus(); rowInputs[pos-1].select(); }
     }
 
   } else if(e.key==='ArrowDown'){
     e.preventDefault();
-    if(curTd && curTr){
-      const colIdx = [...curTr.cells].indexOf(curTd);
-      const tbody = curTr.closest('tbody');
-      const rows = [...tbody.querySelectorAll('tr:not(.sumr)')];
-      const rowIdx = rows.indexOf(curTr);
-      if(rowIdx>=0 && rowIdx<rows.length-1){
-        const nextRow = rows[rowIdx+1];
-        const nextTd = nextRow.cells[colIdx];
-        const nextInput = nextTd?.querySelector('.ni');
-        if(nextInput){ nextInput.focus(); nextInput.select(); }
-      }
+    if(rowIdx < allRows.length-1){
+      const nextTd = allRows[rowIdx+1].cells[colIdx];
+      const nextInp = nextTd?.querySelector('.ni');
+      if(nextInp && !nextInp.readOnly){ nextInp.focus(); nextInp.select(); }
     }
 
   } else if(e.key==='ArrowUp'){
     e.preventDefault();
-    if(curTd && curTr){
-      const colIdx = [...curTr.cells].indexOf(curTd);
-      const tbody = curTr.closest('tbody');
-      const rows = [...tbody.querySelectorAll('tr:not(.sumr)')];
-      const rowIdx = rows.indexOf(curTr);
-      if(rowIdx>0){
-        const prevRow = rows[rowIdx-1];
-        const prevTd = prevRow.cells[colIdx];
-        const prevInput = prevTd?.querySelector('.ni');
-        if(prevInput){ prevInput.focus(); prevInput.select(); }
-      }
+    if(rowIdx > 0){
+      const prevTd = allRows[rowIdx-1].cells[colIdx];
+      const prevInp = prevTd?.querySelector('.ni');
+      if(prevInp && !prevInp.readOnly){ prevInp.focus(); prevInp.select(); }
     }
   }
 });
 
+// 드래그 앤 드롭으로 숫자 이동 방지
+document.addEventListener('dragstart', e=>{
+  if(e.target.classList.contains('ni')) e.preventDefault();
+});
 init();
 </script>
 </body>
