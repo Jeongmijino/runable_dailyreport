@@ -219,6 +219,75 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--t1);color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:700;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:300;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:768px){.app{grid-template-columns:1fr}.sb{display:none}.tw{margin-left:16px;margin-right:16px}}
+
+/* ── 달력 뷰 ── */
+.cal-wrap{padding:0 28px 32px}
+.cal-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.cal-nav{display:flex;align-items:center;gap:6px}
+.cal-nav button{font-family:var(--fn);font-size:12px;font-weight:600;padding:0 10px;height:30px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);cursor:pointer}
+.cal-nav button:hover{background:var(--bg)}
+.cal-nav .cal-month-label{font-size:15px;font-weight:800;letter-spacing:-.01em;min-width:100px;text-align:center}
+.cal-filter{display:flex;gap:6px;align-items:center;margin-left:auto}
+.cal-filter label{font-size:10px;font-weight:700;color:var(--t2)}
+.cal-filter select{font-family:var(--fn);font-size:11px;padding:0 8px;border:1px solid var(--bdr2);border-radius:var(--r);background:var(--surf);color:var(--t1);height:30px;cursor:pointer}
+.cal-filter select:focus{outline:none;border-color:var(--blu)}
+.cal-grid{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid var(--bdr)}
+.cal-dow{padding:9px 0;text-align:center;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--t2)}
+.cal-dow:first-child{color:#e03131}
+.cal-dow:last-child{color:var(--blu)}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{min-height:100px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);padding:6px 4px 4px;position:relative;vertical-align:top}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell.other-month .cal-day-num{color:var(--t3)}
+.cal-cell.today{background:#f0f4ff}
+.cal-cell.today .cal-day-num{background:var(--blu);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-cell.weekend-sun .cal-day-num{color:#e03131}
+.cal-cell.weekend-sat .cal-day-num{color:var(--blu)}
+.cal-day-num{font-size:12px;font-weight:700;margin-bottom:4px;padding:0 2px;line-height:22px}
+.cal-event{display:block;font-size:10px;font-weight:700;border-radius:3px;padding:2px 6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5}
+.cal-event.ev-start{border-radius:20px 3px 3px 20px;margin-left:2px}
+.cal-event.ev-end{border-radius:3px 20px 20px 3px;margin-right:2px}
+.cal-event.ev-mid{border-radius:0;margin-left:0;margin-right:0}
+.cal-event.ev-solo{border-radius:20px;margin-left:2px;margin-right:2px}
+.cal-event.ev-confirmed{background:#dbe4ff;color:var(--blu)}
+.cal-event.ev-pending{background:#fff0f6;color:var(--pnk);border:1px dashed var(--pnk-bdr)}
+.cal-legend{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
+.cal-legend-dot{width:10px;height:10px;border-radius:2px}
+.cal-legend-dot.confirmed{background:#dbe4ff;border:1px solid var(--blu)}
+.cal-legend-dot.pending{background:#fff0f6;border:1px dashed var(--pnk-bdr)}
+
+/* ── 광고 문의 뷰 ── */
+.inq-header{padding:0 28px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.inq-list{padding:0 28px 32px;display:flex;flex-direction:column;gap:10px}
+.inq-card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;cursor:pointer;transition:all .12s;position:relative}
+.inq-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.07);border-color:var(--bdr2)}
+.inq-card.confirmed{border-left:3px solid var(--blu)}
+.inq-card.pending{border-left:3px solid #f08c00}
+.inq-card-body{flex:1;min-width:0}
+.inq-title{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.inq-status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.inq-status-badge.confirmed{background:var(--blu-bg);color:var(--blu)}
+.inq-status-badge.pending{background:var(--amb-bg);color:var(--amb)}
+.inq-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:6px}
+.inq-meta span{display:flex;align-items:center;gap:3px}
+.inq-note{font-size:11px;color:var(--t3);background:var(--bg);border-radius:5px;padding:6px 10px;margin-top:6px;line-height:1.5;white-space:pre-wrap}
+.inq-actions{display:flex;gap:5px;flex-shrink:0;align-items:flex-start}
+/* 광고문의 상세 모달 */
+.inq-modal{width:580px}
+.inq-modal .mfr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.inq-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--bdr)}
+.inq-section-title{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+.inq-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.inq-detail-chip{padding:8px 12px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r)}
+.inq-detail-chip-label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+.inq-detail-chip-val{font-size:12px;font-weight:600;color:var(--t1)}
+.status-toggle{display:flex;gap:6px}
+.status-toggle button{font-family:var(--fn);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;border:2px solid transparent;cursor:pointer;transition:all .12s}
+.status-toggle button.active-confirmed{background:var(--blu-bg);color:var(--blu);border-color:var(--blu)}
+.status-toggle button.active-pending{background:var(--amb-bg);color:var(--amb);border-color:#f08c00}
+.status-toggle button.inactive{background:var(--bg);color:var(--t3);border-color:var(--bdr)}
 </style>
 </head>
 <body>
@@ -280,6 +349,10 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   <div class="sb-div"></div>
   <div class="sb-sec">랩사</div>
   <div id="sb-ags"></div>
+  <div class="sb-div"></div>
+  <div class="sb-sec">도구</div>
+  <button class="sbi" id="sb-cal" onclick="gotoCalendar()">바텀시트 달력</button>
+  <button class="sbi" id="sb-inq" onclick="gotoInquiry()">광고 문의</button>
   <div class="sb-div"></div>
   <button class="sbi" id="sb-stg" onclick="gotoSettings()"><span>⚙</span> 설정</button>
   <div class="sb-bottom">
@@ -414,6 +487,55 @@ tr.sumr td.rc .ci{color:#fcc2d7}
     </div>
   </div>
 
+  <!-- CALENDAR -->
+  <div id="v-calendar" style="display:none">
+    <div class="ph"><div class="ph-l"><div class="ey">바텀시트 단독구좌</div><div class="pt">바텀시트 달력</div></div></div>
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <div class="cal-nav">
+          <button onclick="calPrevMonth()">‹</button>
+          <div class="cal-month-label" id="cal-month-label"></div>
+          <button onclick="calNextMonth()">›</button>
+          <button onclick="calToday()" style="margin-left:4px;font-size:11px">오늘</button>
+        </div>
+        <div class="cal-filter">
+          <label>확정 여부</label>
+          <select id="cal-status-filter" onchange="renderCalendar()">
+            <option value="all">전체</option>
+            <option value="confirmed">확정만</option>
+            <option value="pending">미정만</option>
+          </select>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-dow-row">
+          <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+          <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+      </div>
+      <div class="cal-legend">
+        <div class="cal-legend-item"><div class="cal-legend-dot confirmed"></div> 확정</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot pending"></div> 미정</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INQUIRY -->
+  <div id="v-inquiry" style="display:none">
+    <div class="ph">
+      <div class="ph-l"><div class="ey">Inquiry Management</div><div class="pt">광고 문의</div></div>
+      <div class="ph-r">
+        <div class="srch">
+          <span class="srch-ico">🔍</span>
+          <input id="inq-srch" placeholder="광고주 · 대행사 검색" oninput="renderInquiryList()">
+        </div>
+        <button class="btn btn-p" onclick="openInquiryModal()">+ 새 문의</button>
+      </div>
+    </div>
+    <div class="inq-list" id="inq-list"></div>
+  </div>
+
   <!-- SETTINGS -->
   <div id="v-settings" style="display:none">
     <div class="ph"><div class="ph-l"><div class="ey">Configuration</div><div class="pt">설정</div></div></div>
@@ -483,6 +605,41 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   </div>
 </div>
 
+<!-- 광고문의 모달 -->
+<div class="ovl" id="inq-ovl" onclick="if(event.target===this)closeInquiryModal()">
+  <div class="modal inq-modal">
+    <div class="modal-title" id="inq-modal-title">새 광고 문의</div>
+    <input type="hidden" id="inq-id">
+    <div class="mfr">
+      <div class="mfld"><label>광고주 *</label><input type="text" id="inq-client" placeholder="예: 아식스"></div>
+      <div class="mfld"><label>대행사</label><input type="text" id="inq-agency" placeholder="예: 인크로스"></div>
+    </div>
+    <div class="mfld"><label>예산</label><input type="text" id="inq-budget" placeholder="예: 5,000,000"></div>
+    <div class="mfld"><label>확정 여부</label>
+      <div class="status-toggle" id="inq-status-toggle">
+        <button onclick="setInqStatus('pending')" id="inq-st-pending" class="active-pending">미정</button>
+        <button onclick="setInqStatus('confirmed')" id="inq-st-confirmed" class="inactive">확정</button>
+      </div>
+    </div>
+    <div class="inq-section">
+      <div class="inq-section-title">광고 상품 정보</div>
+      <div class="mfr">
+        <div class="mfld"><label>시작일</label><input type="date" id="inq-start"></div>
+        <div class="mfld"><label>종료일</label><input type="date" id="inq-end"></div>
+      </div>
+      <div class="mfld"><label>광고 상품 (쉼표 구분)</label><input type="text" id="inq-products" placeholder="바텀시트, 메인 띠배너"></div>
+    </div>
+    <div class="inq-section">
+      <div class="inq-section-title">기타 사항</div>
+      <div class="mfld"><textarea id="inq-note" placeholder="특이사항, 요청사항 등..." rows="3" style="font-family:var(--fn);font-size:12px;padding:8px 10px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);width:100%;resize:vertical;line-height:1.5"></textarea></div>
+    </div>
+    <div class="mac">
+      <button class="btn" onclick="closeInquiryModal()">취소</button>
+      <button class="btn btn-p" onclick="saveInquiry()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Firebase SDK -->
@@ -531,6 +688,7 @@ let CAMPS = [];   // campaigns array
 let REPORTS = {}; // { [id]: reportData }
 let THR = {};     // { [productName]: threshold }
 
+let INQUIRIES = []; // 광고 문의 목록
 let selMonth = 'all';
 let curView = 'list';
 let curCampId = null;
@@ -666,6 +824,13 @@ function startListeners(){
     }
     setSyncStatus(true);
   }, ()=>setSyncStatus(false));
+
+  // Inquiries
+  onValue(ref(db,'inquiries'), snap=>{
+    INQUIRIES = snap.val() || [];
+    if(dbReady && curView==='inquiry') renderInquiryList();
+    if(dbReady && curView==='calendar') renderCalendar();
+  }, ()=>{});
 
   // Thresholds
   onValue(ref(db,'thresholds'), snap=>{
@@ -845,15 +1010,19 @@ function renderAll(){
 // ════════════════════════════════════
 function showView(v){
   curView=v;
-  ['list','report','monthly','settings'].forEach(n=>{ document.getElementById('v-'+n).style.display=n===v?'':'none'; });
+  ['list','report','monthly','settings','calendar','inquiry'].forEach(n=>{ document.getElementById('v-'+n).style.display=n===v?'':'none'; });
   document.getElementById('sb-list').className='sbi'+(v==='list'?' on':'');
   document.getElementById('sb-mo').className='sbi'+(v==='monthly'?' on':'');
   document.getElementById('sb-stg').className='sbi'+(v==='settings'?' on':'');
+  document.getElementById('sb-cal').className='sbi'+(v==='calendar'?' on':'');
+  document.getElementById('sb-inq').className='sbi'+(v==='inquiry'?' on':'');
   document.getElementById('main').scrollTop=0;
 }
 function gotoList(){ showView('list'); curCampId=null; curRD=null; history.replaceState(null,'',location.pathname); const agf=document.getElementById('ag-filter'); if(agf) agf.value=''; renderAll(); }
 function gotoMonthly(){ showView('monthly'); renderSidebar(); renderMonthChips('month-chips-2'); renderMonthly(); }
 function gotoSettings(){ showView('settings'); renderSettings(); renderTokenList(); }
+window.gotoCalendar=function(){ showView('calendar'); renderCalendar(); };
+window.gotoInquiry=function(){ showView('inquiry'); renderInquiryList(); };
 window.gotoList=gotoList; window.gotoMonthly=gotoMonthly; window.gotoSettings=gotoSettings;
 
 // ════════════════════════════════════
@@ -1489,7 +1658,9 @@ window.saveCampaign=async function(){
     const id='c_'+Date.now();
     CAMPS.push({id,client,agency,campaign,start,end,products,created:Date.now()});
     const rd={cfg:{client,campaign,agency,start,end},products,data:{}};
-    products.forEach(p=>rd.data[p]={}); await saveRD(id,rd);
+    products.forEach(p=>rd.data[p]={});
+    REPORTS[id]=rd; // 즉시 로컬 캐시에 반영 (상세페이지 진입 가능하게)
+    await saveRD(id,rd);
   }
   await saveCamps(CAMPS);
   window.closeNewModal();
@@ -1547,8 +1718,247 @@ window.exportAll=async function(){
   a.download=`runnble_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
 };
 
+// ════════════════════════════════════
+//  CALENDAR — 바텀시트 달력
+// ════════════════════════════════════
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-based
+
+window.calPrevMonth = function(){
+  calMonth--; if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+};
+window.calNextMonth = function(){
+  calMonth++; if(calMonth>11){calMonth=0;calYear++;}
+  renderCalendar();
+};
+window.calToday = function(){
+  const t=new Date(); calYear=t.getFullYear(); calMonth=t.getMonth();
+  renderCalendar();
+};
+
+function getBottomsheetCamps(){
+  // 바텀시트 상품이 있는 캠페인만 필터
+  return CAMPS.filter(c=>(c.products||[]).some(p=>p.includes('바텀시트')));
+}
+
+function renderCalendar(){
+  const lbl = document.getElementById('cal-month-label');
+  if(!lbl) return;
+  lbl.textContent = `${calYear}년 ${calMonth+1}월`;
+
+  const statusFilter = document.getElementById('cal-status-filter')?.value || 'all';
+
+  // 이번달 첫날, 마지막날
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay  = new Date(calYear, calMonth+1, 0);
+  const startDow = firstDay.getDay(); // 0=일
+  const totalDays = lastDay.getDate();
+
+  // 달력에 표시할 날짜 배열 (앞 빈칸 포함 42칸)
+  const cells = [];
+  for(let i=0; i<startDow; i++){
+    const d = new Date(calYear, calMonth, -startDow+1+i);
+    cells.push({date:d, other:true});
+  }
+  for(let d=1; d<=totalDays; d++){
+    cells.push({date:new Date(calYear, calMonth, d), other:false});
+  }
+  const remaining = 42 - cells.length;
+  for(let i=1; i<=remaining; i++){
+    cells.push({date:new Date(calYear, calMonth+1, i), other:true});
+  }
+
+  // 이번달 범위 문자열
+  const monthStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  const today = new Date().toISOString().split('T')[0];
+
+  // 바텀시트 캠페인 수집
+  let camps = getBottomsheetCamps();
+
+  // 확정 여부 필터 (INQUIRIES와 연동: 캠페인 이름으로 매칭)
+  if(statusFilter !== 'all'){
+    camps = camps.filter(c=>{
+      const inq = INQUIRIES.find(q=>q.campId===c.id || (q.client===c.client && q.campaign===c.campaign));
+      const status = inq ? inq.status : 'pending';
+      return status === statusFilter;
+    });
+  }
+
+  // 날짜별 이벤트 맵 생성
+  // event = {campId, campaign, client, agency, start, end, status, botProduct}
+  const events = camps.map(c=>{
+    const inq = INQUIRIES.find(q=>q.campId===c.id);
+    const status = inq ? (inq.status||'pending') : 'pending';
+    const botProd = (c.products||[]).filter(p=>p.includes('바텀시트')).join(', ');
+    return {id:c.id, label: c.campaign||c.client||'', client:c.client, agency:c.agency, start:c.start, end:c.end, status, botProd};
+  }).filter(e=>e.start&&e.end);
+
+  // 달력 그리기
+  const grid = document.getElementById('cal-days');
+  if(!grid) return;
+
+  let html2 = '';
+  for(let i=0; i<cells.length; i++){
+    const cell = cells[i];
+    const ds = cell.date.toISOString().split('T')[0];
+    const dow = cell.date.getDay();
+    const isToday = ds === today;
+    const cls = [
+      'cal-cell',
+      cell.other ? 'other-month' : '',
+      isToday ? 'today' : '',
+      dow===0 ? 'weekend-sun' : '',
+      dow===6 ? 'weekend-sat' : ''
+    ].filter(Boolean).join(' ');
+
+    let dayNumHtml = `<div class="cal-day-num">${cell.date.getDate()}</div>`;
+
+    // 이 날에 해당하는 이벤트
+    let evHtml = '';
+    events.forEach(e=>{
+      if(ds < e.start || ds > e.end) return;
+      const isStart = ds === e.start;
+      const isEnd   = ds === e.end;
+      const isSolo  = isStart && isEnd;
+      const posCls  = isSolo ? 'ev-solo' : isStart ? 'ev-start' : isEnd ? 'ev-end' : 'ev-mid';
+      const statusCls = e.status === 'confirmed' ? 'ev-confirmed' : 'ev-pending';
+      // 시작칸에만 텍스트
+      const label = (isStart||isSolo) ? (e.label.length>10?e.label.slice(0,10)+'…':e.label) : '　';
+      evHtml += `<span class="cal-event ${posCls} ${statusCls}" title="${e.label} (${e.start}~${e.end}) ${e.status==='confirmed'?'✅확정':'⏳미정'}">${label}</span>`;
+    });
+
+    html2 += `<div class="${cls}">${dayNumHtml}${evHtml}</div>`;
+  }
+  grid.innerHTML = html2;
+}
+
+// ════════════════════════════════════
+//  INQUIRY — 광고 문의
+// ════════════════════════════════════
+let inqEditStatus = 'pending';
+
+window.setInqStatus = function(s){
+  inqEditStatus = s;
+  document.getElementById('inq-st-pending').className = s==='pending' ? 'active-pending' : 'inactive';
+  document.getElementById('inq-st-confirmed').className = s==='confirmed' ? 'active-confirmed' : 'inactive';
+};
+
+window.openInquiryModal = function(id){
+  inqEditStatus = 'pending';
+  document.getElementById('inq-id').value = '';
+  document.getElementById('inq-modal-title').textContent = '새 광고 문의';
+  ['inq-client','inq-agency','inq-budget','inq-products','inq-note'].forEach(i=>{
+    const el=document.getElementById(i); if(el) el.value='';
+  });
+  ['inq-start','inq-end'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  window.setInqStatus('pending');
+  if(id){
+    const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
+    document.getElementById('inq-id').value = id;
+    document.getElementById('inq-modal-title').textContent = '문의 수정';
+    document.getElementById('inq-client').value = inq.client||'';
+    document.getElementById('inq-agency').value = inq.agency||'';
+    document.getElementById('inq-budget').value = inq.budget||'';
+    document.getElementById('inq-start').value = inq.start||'';
+    document.getElementById('inq-end').value = inq.end||'';
+    document.getElementById('inq-products').value = (inq.products||[]).join(', ');
+    document.getElementById('inq-note').value = inq.note||'';
+    window.setInqStatus(inq.status||'pending');
+  }
+  document.getElementById('inq-ovl').classList.add('open');
+};
+window.closeInquiryModal = function(){ document.getElementById('inq-ovl').classList.remove('open'); };
+
+window.saveInquiry = async function(){
+  const client = document.getElementById('inq-client').value.trim();
+  if(!client){ showToast('광고주를 입력하세요'); return; }
+  const eid = document.getElementById('inq-id').value;
+  const products = document.getElementById('inq-products').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const obj = {
+    id: eid || 'iq_'+Date.now(),
+    client,
+    agency: document.getElementById('inq-agency').value.trim(),
+    budget: document.getElementById('inq-budget').value.trim(),
+    start:  document.getElementById('inq-start').value,
+    end:    document.getElementById('inq-end').value,
+    products,
+    note:   document.getElementById('inq-note').value.trim(),
+    status: inqEditStatus,
+    created: eid ? (INQUIRIES.find(q=>q.id===eid)||{}).created||Date.now() : Date.now(),
+    updated: Date.now()
+  };
+  if(eid){
+    const i = INQUIRIES.findIndex(q=>q.id===eid);
+    if(i>=0) INQUIRIES[i]=obj; else INQUIRIES.push(obj);
+  } else {
+    INQUIRIES.push(obj);
+  }
+  await set(ref(db,'inquiries'), INQUIRIES);
+  window.closeInquiryModal();
+  showToast(eid?'수정되었습니다':'문의가 추가되었습니다');
+  renderInquiryList();
+};
+
+window.deleteInquiry = async function(id){
+  if(!confirm('이 문의를 삭제하시겠습니까?')) return;
+  INQUIRIES = INQUIRIES.filter(q=>q.id!==id);
+  await set(ref(db,'inquiries'), INQUIRIES);
+  showToast('삭제되었습니다');
+  renderInquiryList();
+};
+
+window.toggleInquiryStatus = async function(id){
+  const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
+  inq.status = inq.status==='confirmed' ? 'pending' : 'confirmed';
+  inq.updated = Date.now();
+  await set(ref(db,'inquiries'), INQUIRIES);
+  renderInquiryList();
+  showToast(inq.status==='confirmed'?'✅ 확정으로 변경':'⏳ 미정으로 변경');
+};
+
+function renderInquiryList(){
+  const el = document.getElementById('inq-list'); if(!el) return;
+  const q = (document.getElementById('inq-srch')?.value||'').toLowerCase().trim();
+  let list = [...INQUIRIES].sort((a,b)=>b.created-a.created);
+  if(q) list = list.filter(i=>(i.client||'').toLowerCase().includes(q)||(i.agency||'').toLowerCase().includes(q));
+  if(!list.length){
+    el.innerHTML=`<div class="empty">📋<br><br>광고 문의가 없습니다<br><span style="font-size:12px">+ 새 문의를 추가해보세요</span></div>`;
+    return;
+  }
+  el.innerHTML = list.map(inq=>{
+    const statusLabel = inq.status==='confirmed' ? '확정' : '미정';
+    const statusCls   = inq.status==='confirmed' ? 'confirmed' : 'pending';
+    const cardCls     = inq.status==='confirmed' ? 'inq-card confirmed' : 'inq-card pending';
+    const budget      = inq.budget ? `💰 ${inq.budget}` : '';
+    const period      = (inq.start&&inq.end) ? `📅 ${inq.start} ~ ${inq.end}` : '';
+    const prods       = (inq.products||[]).length ? `📦 ${inq.products.join(', ')}` : '';
+    return `<div class="${cardCls}">
+      <div class="inq-card-body">
+        <div class="inq-title">
+          ${inq.client||'(광고주 없음)'}
+          ${inq.agency ? `<span style="font-size:12px;font-weight:500;color:var(--t2)">· ${inq.agency}</span>` : ''}
+          <span class="inq-status-badge ${statusCls}">${statusLabel}</span>
+        </div>
+        <div class="inq-meta">
+          ${budget?`<span>${budget}</span>`:''}
+          ${period?`<span>${period}</span>`:''}
+          ${prods?`<span>${prods}</span>`:''}
+        </div>
+        ${inq.note ? `<div class="inq-note">${inq.note}</div>` : ''}
+      </div>
+      <div class="inq-actions">
+        <button class="btn btn-sm" onclick="toggleInquiryStatus('${inq.id}')" style="font-size:10px">${inq.status==='confirmed'?'↩ 미정으로':'✅ 확정'}</button>
+        <button class="btn-icon" onclick="openInquiryModal('${inq.id}')">✏️</button>
+        <button class="btn-icon del" onclick="deleteInquiry('${inq.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // keyboard nav
-document.addEventListener('keydown',e=>{
+document.addEventListener('keydown'
+,e=>{
   const el = document.activeElement;
 
   // Ctrl+Z : 셀 값 되돌리기
@@ -1568,6 +1978,8 @@ document.addEventListener('keydown',e=>{
     return;
   }
 
+  // 오버레이/모달 열려있으면 키보드 네비게이션 비활성화
+  if(document.querySelector('.ovl.open')) return;
   if(!el.classList.contains('ni')) return;
 
   const curTd = el.closest('td');
