@@ -454,9 +454,9 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <div class="fld"><label>종료일</label><input type="date" id="rc-end" onchange="rDateChange()"></div>
           <div class="fld">
             <label>공유 코드 <span style="font-weight:400;color:var(--t3)">(랩사 링크 접근 비밀번호)</span></label>
-            <div style="display:flex;gap:6px">
-              <input type="text" id="rc-token" placeholder="예: incross2026" style="flex:1">
-              <button class="btn btn-sm" onclick="genToken()" title="랜덤 생성">🎲 랜덤</button>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="text" id="rc-token" placeholder="예: incross2026" style="flex:1;min-width:0">
+              <button class="btn btn-sm" onclick="genToken()" style="white-space:nowrap;flex-shrink:0">랜덤</button>
             </div>
           </div>
           <div class="fld"><label>담당자 성함</label><input type="text" id="rc-contact" placeholder="예: 홍길동"></div>
@@ -558,7 +558,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
         <button class="btn btn-p" onclick="openInquiryModal()">+ 새 문의</button>
       </div>
     </div>
-    <div class="inq-list" id="inq-list"></div>
+    <div class="inq-list" id="inq-list" style="max-height:calc(100vh - 160px);overflow-y:auto;padding-bottom:40px"></div>
   </div>
 
   <!-- CONTACTS -->
@@ -575,7 +575,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
     </div>
     <div style="padding:0 28px 32px">
       <div id="ct-stats" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap"></div>
-      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden">
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;max-height:calc(100vh - 260px);overflow-y:auto">
         <table style="width:100%;border-collapse:collapse">
           <thead>
             <tr style="border-bottom:2px solid var(--bdr)">
@@ -686,6 +686,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="mfld"><label>광고주 *</label><input type="text" id="inq-client" placeholder="예: 아식스"></div>
       <div class="mfld"><label>대행사</label><input type="text" id="inq-agency" placeholder="예: 인크로스"></div>
     </div>
+    <div class="mfld"><label>캠페인명</label><input type="text" id="inq-campaign" placeholder="예: 아식스 젤 카야노33 캠페인"></div>
     <div class="mfld"><label>예산</label><input type="text" id="inq-budget" placeholder="예: 5,000,000" oninput="formatBudgetInput(this)" inputmode="numeric"></div>
     <div class="mfld"><label>확정 여부</label>
       <div class="status-toggle" id="inq-status-toggle">
@@ -708,6 +709,13 @@ tr.sumr td.rc .ci{color:#fcc2d7}
         <label>바텀시트 운영 기간 <span style="font-weight:400;color:var(--t3)">(달력에 표시 · 여러 기간 추가 가능)</span></label>
         <div id="inq-bs-periods" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
         <button type="button" onclick="addBsPeriod()" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r);border:1.5px dashed var(--bdr2);background:transparent;color:var(--t2);cursor:pointer;width:100%">+ 기간 추가</button>
+      </div>
+    </div>
+    <div id="inq-push-wrap" style="display:none;margin-top:10px">
+      <div class="mfld">
+        <label>앱푸시 발송 일정 <span style="font-weight:400;color:var(--t3)">(여러 날짜 추가 가능)</span></label>
+        <div id="inq-push-dates" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+        <button type="button" onclick="addPushDate()" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r);border:1.5px dashed var(--bdr2);background:transparent;color:var(--t2);cursor:pointer;width:100%">+ 날짜 추가</button>
       </div>
     </div>
     <div class="inq-section">
@@ -1153,23 +1161,25 @@ window.gotoContacts=function(){
 };
 
 function renderContacts(){
-  // CAMPS와 INQUIRIES 모두에서 담당자 수집
   const contacts=[];
   const seen=new Set();
 
-  // 캠페인에서
+  // 캠페인에서 수집 (inqId 있는 캠페인 = 문의에서 확정된 건)
   CAMPS.forEach(c=>{
     if(!c.contact&&!c.email) return;
-    const key=(c.contact||'')+'|'+(c.email||'');
-    const entry={name:c.contact||'',email:c.email||'',client:c.client||'',agency:c.agency||'',campaign:c.campaign||'',source:'캠페인'};
-    contacts.push(entry);
+    const key=(c.email||c.contact||'')+'|'+(c.client||'');
+    if(seen.has(key)) return;
+    seen.add(key);
+    contacts.push({name:c.contact||'',email:c.email||'',client:c.client||'',agency:c.agency||'',campaign:c.campaign||'',source:'캠페인'});
   });
 
-  // 광고 문의에서
+  // 광고 문의에서 수집 (캠페인으로 확정된 건은 이미 위에 있으므로 미확정만)
   INQUIRIES.forEach(inq=>{
     if(!inq.contact&&!inq.email) return;
-    const entry={name:inq.contact||'',email:inq.email||'',client:inq.client||'',agency:inq.agency||'',campaign:'',source:'광고 문의'};
-    contacts.push(entry);
+    const key=(inq.email||inq.contact||'')+'|'+(inq.client||'');
+    if(seen.has(key)) return; // 이미 캠페인에 있으면 스킵
+    seen.add(key);
+    contacts.push({name:inq.contact||'',email:inq.email||'',client:inq.client||'',agency:inq.agency||'',campaign:inq.campaign||'',source:'광고 문의'});
   });
 
   // 검색 필터
@@ -2377,6 +2387,37 @@ let selectedProducts = [];
 
 function getProductList(){ return FIXED_PRODUCTS; }
 
+// 앱푸시 발송 날짜
+let pushDates = [];
+window.addPushDate = function(date=''){
+  pushDates.push({date});
+  renderPushDates();
+};
+window.removePushDate = function(i){
+  pushDates.splice(i,1);
+  renderPushDates();
+};
+function renderPushDates(){
+  const el=document.getElementById('inq-push-dates'); if(!el) return;
+  el.innerHTML=pushDates.map((p,i)=>`
+    <div style="display:flex;gap:6px;align-items:center" data-push-row="${i}">
+      <input type="date" class="push-date-input" value="${p.date}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:2">
+      <input type="time" class="push-time-input" value="${p.time||''}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="removePushDate(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+function getPushDatesFromDOM(){
+  const rows=document.querySelectorAll('#inq-push-dates [data-push-row]');
+  return Array.from(rows).map(r=>{
+    const date=r.querySelector('.push-date-input')?.value||'';
+    const time=r.querySelector('.push-time-input')?.value||'';
+    return date?(time?date+' '+time:date):'';
+  }).filter(Boolean);
+}
+
 // 바텀시트 기간 행 추가
 let bsPeriods = []; // [{start:'', end:''}]
 
@@ -2402,6 +2443,9 @@ window.toggleProd = function(p){
   const i = selectedProducts.indexOf(p);
   if(i>=0) selectedProducts.splice(i,1); else selectedProducts.push(p);
   renderProdChips();
+  // 앱푸시 선택 시 날짜 입력란 표시/숨김
+  const pushWrap = document.getElementById('inq-push-wrap');
+  if(pushWrap) pushWrap.style.display = selectedProducts.includes('푸시 광고') ? '' : 'none';
 };
 
 window.formatBudgetInput = function(el){
@@ -2419,11 +2463,15 @@ window.openInquiryModal = function(id){
   inqEditStatus = 'pending';
   document.getElementById('inq-id').value = '';
   document.getElementById('inq-modal-title').textContent = '새 광고 문의';
-  ['inq-client','inq-agency','inq-budget','inq-note'].forEach(i=>{
+  ['inq-client','inq-agency','inq-campaign','inq-budget','inq-note'].forEach(i=>{
     const el=document.getElementById(i); if(el) el.value='';
   });
   ['inq-start','inq-end'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   selectedProducts = [];
+  pushDates = [];
+  renderPushDates();
+  const pushWrap=document.getElementById('inq-push-wrap');
+  if(pushWrap) pushWrap.style.display='none';
   bsPeriods = [];
   renderBsPeriods();
   window.setInqStatus('pending');
@@ -2434,6 +2482,7 @@ window.openInquiryModal = function(id){
     document.getElementById('inq-modal-title').textContent = '문의 수정';
     document.getElementById('inq-client').value = inq.client||'';
     document.getElementById('inq-agency').value = inq.agency||'';
+    document.getElementById('inq-campaign').value = inq.campaign||'';
     const rawBudget = (inq.budget||'').toString().replace(/[^0-9]/g,'');
     document.getElementById('inq-budget').value = rawBudget ? Number(rawBudget).toLocaleString('ko-KR') : '';
     document.getElementById('inq-start').value = inq.start||'';
@@ -2445,6 +2494,12 @@ window.openInquiryModal = function(id){
     document.getElementById('inq-contact').value = inq.contact||'';
     document.getElementById('inq-email').value = inq.email||'';
     selectedProducts = [...(inq.products||[])];
+    pushDates = Array.isArray(inq.push_dates)?inq.push_dates.map(d=>{
+      const parts=(d||'').split(' '); return {date:parts[0]||'',time:parts[1]||''};
+    }):[];
+    renderPushDates();
+    const pushWrapEdit=document.getElementById('inq-push-wrap');
+    if(pushWrapEdit) pushWrapEdit.style.display=selectedProducts.includes('푸시 광고')?'':'none';
     document.getElementById('inq-note').value = inq.note||'';
     window.setInqStatus(inq.status||'pending');
     renderProdChips();
@@ -2462,6 +2517,7 @@ window.saveInquiry = async function(){
   const obj = {
     id: eid || 'iq_'+Date.now(),
     client,
+    campaign: document.getElementById('inq-campaign').value.trim(),
     agency: document.getElementById('inq-agency').value.trim(),
     budget: rawBudget,
     start:  document.getElementById('inq-start').value,
@@ -2469,6 +2525,7 @@ window.saveInquiry = async function(){
     bs_periods: getBsPeriodsFromDOM(),
     bs_start: getBsPeriodsFromDOM()[0]?.start||'',
     bs_end:   getBsPeriodsFromDOM()[0]?.end||'',
+    push_dates: getPushDatesFromDOM(),
     contact:  document.getElementById('inq-contact').value.trim(),
     email:    document.getElementById('inq-email').value.trim(),
     products,
@@ -2514,7 +2571,7 @@ window.toggleInquiryStatus = async function(id){
         id: campId,
         client: inq.client||'',
         agency: inq.agency||'',
-        campaign: [inq.client, inq.agency].filter(Boolean).join(' · ')||'광고 캠페인',
+        campaign: inq.campaign||[inq.client, inq.agency].filter(Boolean).join(' · ')||'광고 캠페인',
         start: inq.start||'',
         end: inq.end||'',
         products,
@@ -2599,7 +2656,8 @@ function renderInquiryList(){
       <div class="inq-card-body">
         <div class="inq-title">
           ${inq.client||'(광고주 없음)'}
-          ${inq.agency ? `<span style="font-size:12px;font-weight:500;color:var(--t2)">· ${inq.agency}</span>` : ''}
+          ${inq.campaign ? `<span style="font-size:12px;font-weight:600;color:var(--t1)"> · ${inq.campaign}</span>` : ''}
+          ${inq.agency ? `<span style="font-size:12px;font-weight:500;color:var(--t2)"> · ${inq.agency}</span>` : ''}
           <span class="inq-status-badge ${statusCls}" style="font-size:10px;padding:2px 8px">${statusLabel}</span>
         </div>
         ${contactStr ? `<div style="font-size:11px;color:var(--t3);margin-bottom:5px">${contactStr}</div>` : ''}
@@ -2609,6 +2667,7 @@ function renderInquiryList(){
           ${prods?`<span>${prods}</span>`:''}
           ${bsPeriod?`<div style="margin-top:3px;font-size:11px;color:#868e96;width:100%">바텀시트 ${bsPeriod}</div>`:''}
         </div>
+        ${inq.push_dates&&inq.push_dates.length ? `<div style="font-size:11px;color:#7048e8;margin-top:4px">앱푸시: ${inq.push_dates.join(', ')}</div>` : ''}
         ${inq.note ? `<div class="inq-note">${inq.note}</div>` : ''}
       </div>
       <div class="inq-actions">
