@@ -255,6 +255,8 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 .cal-event.ev-solo{border-radius:20px;margin-left:2px;margin-right:2px}
 .cal-event.ev-confirmed{background:#dbe4ff;color:var(--blu)}
 .cal-event.ev-pending{background:#f1f3f5;color:#868e96;border:1px dashed #ced4da}
+.cal-event.ev-sponsor-confirmed{background:#f3d9fa;color:#9c36b5}
+.cal-event.ev-sponsor-pending{background:#f8f0fc;color:#be4bdb;border:1px dashed #cc5de8}
 .cal-legend{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
 .cal-legend-dot{width:10px;height:10px;border-radius:2px}
@@ -517,13 +519,16 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <button onclick="calNextMonth()">›</button>
           <button onclick="calToday()" style="margin-left:4px;font-size:11px">오늘</button>
         </div>
-        <div class="cal-filter">
-          <label>확정 여부</label>
-          <select id="cal-status-filter" onchange="renderCalendar()">
-            <option value="all">전체</option>
-            <option value="confirmed">확정만</option>
-            <option value="pending">미정만</option>
-          </select>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button onclick="openSponsorModal()" style="font-family:var(--fn);font-size:11px;font-weight:700;padding:0 14px;height:30px;border-radius:var(--r);border:none;background:#9c36b5;color:#fff;cursor:pointer">+ 스폰서십 추가</button>
+          <div class="cal-filter" style="margin-left:0">
+            <label>확정 여부</label>
+            <select id="cal-status-filter" onchange="renderCalendar()">
+              <option value="all">전체</option>
+              <option value="confirmed">확정만</option>
+              <option value="pending">미정만</option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="cal-grid">
@@ -534,8 +539,9 @@ tr.sumr td.rc .ci{color:#fcc2d7}
         <div class="cal-days" id="cal-days"></div>
       </div>
       <div class="cal-legend">
-        <div class="cal-legend-item"><div class="cal-legend-dot confirmed"></div> 확정</div>
-        <div class="cal-legend-item"><div class="cal-legend-dot pending"></div> 미정</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot confirmed"></div> 광고 확정</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot pending"></div> 광고 미정</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f3d9fa;border:1px solid #cc5de8"></div> 스폰서십 확정</div>
       </div>
     </div>
   </div>
@@ -722,6 +728,31 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   </div>
 </div>
 
+<!-- 스폰서십 모달 -->
+<div class="ovl" id="sponsor-ovl" onclick="if(event.target===this)closeSponsorModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="sponsor-modal-title">스폰서십 바텀시트 추가</div>
+    <input type="hidden" id="sp-id">
+    <div class="mfr">
+      <div class="mfld"><label>브랜드명 *</label><input type="text" id="sp-brand" placeholder="예: 코카콜라"></div>
+      <div class="mfld"><label>담당 부서</label><input type="text" id="sp-dept" placeholder="예: 스폰서십팀"></div>
+    </div>
+    <div class="mfld"><label>예산</label><input type="text" id="sp-budget" placeholder="예: 3,000,000" oninput="formatBudgetInput(this)" inputmode="numeric"></div>
+    <input type="hidden" id="sp-status-hidden" value="confirmed">
+    <div class="mfld">
+      <label>바텀시트 운영 기간 <span style="font-weight:400;color:var(--t3)">(여러 기간 추가 가능)</span></label>
+      <div id="sp-bs-periods" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+      <button type="button" onclick="spAddPeriod()" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r);border:1.5px dashed var(--bdr2);background:transparent;color:var(--t2);cursor:pointer;width:100%">+ 기간 추가</button>
+    </div>
+    <div class="mfld"><label>기타 사항</label><textarea id="sp-note" rows="2" placeholder="특이사항 등..." style="font-family:var(--fn);font-size:12px;padding:8px 10px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);width:100%;resize:vertical;line-height:1.5"></textarea></div>
+    <div class="mac">
+      <button class="btn" onclick="closeSponsorModal()">취소</button>
+      <button class="btn" onclick="deleteSponsor()" id="sp-del-btn" style="display:none;color:#e03131;border-color:#e03131">삭제</button>
+      <button class="btn btn-p" onclick="saveSponsor()" style="background:#9c36b5;border-color:#9c36b5">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Firebase SDK -->
@@ -771,6 +802,7 @@ let REPORTS = {}; // { [id]: reportData }
 let THR = {};     // { [productName]: threshold }
 
 let INQUIRIES = []; // 광고 문의 목록
+let SPONSORS = [];  // 스폰서십 바텀시트
 let selMonth = 'all';
 let curView = 'list';
 let curCampId = null;
@@ -911,6 +943,12 @@ function startListeners(){
     }
     setSyncStatus(true);
   }, ()=>setSyncStatus(false));
+
+  // Sponsors
+  onValue(ref(db,'sponsors'), snap=>{
+    SPONSORS = snap.val() || [];
+    if(dbReady && curView==='calendar') renderCalendar();
+  }, ()=>{});
 
   // Inquiries
   onValue(ref(db,'inquiries'), snap=>{
@@ -1174,6 +1212,109 @@ window.exportContactsCSV=function(){
   showToast('CSV 파일 다운로드 완료');
 };
 
+// ════════════════════════════════════
+//  SPONSOR — 스폰서십 바텀시트
+// ════════════════════════════════════
+let spStatus = 'pending';
+let spPeriods = [];
+
+// 스폰서십은 항상 확정
+
+window.spAddPeriod = function(start='', end=''){
+  spPeriods.push({start, end});
+  renderSpPeriods();
+};
+window.spRemovePeriod = function(i){
+  spPeriods.splice(i,1);
+  renderSpPeriods();
+};
+function renderSpPeriods(){
+  const el = document.getElementById('sp-bs-periods'); if(!el) return;
+  el.innerHTML = spPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-sp-row="${i}">
+      <input type="date" class="sp-start-input" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="sp-end-input" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="spRemovePeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
+    </div>`).join('');
+}
+function getSpPeriodsFromDOM(){
+  const rows = document.querySelectorAll('#sp-bs-periods [data-sp-row]');
+  return Array.from(rows).map(r=>({
+    start: r.querySelector('.sp-start-input')?.value||'',
+    end:   r.querySelector('.sp-end-input')?.value||''
+  })).filter(p=>p.start||p.end);
+}
+
+window.openSponsorModal = function(id){
+  spStatus='pending'; spPeriods=[];
+  document.getElementById('sp-id').value='';
+  document.getElementById('sponsor-modal-title').textContent='스폰서십 바텀시트 추가';
+  ['sp-brand','sp-dept','sp-budget','sp-note'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  document.getElementById('sp-del-btn').style.display='none';
+  spStatus='confirmed';
+  renderSpPeriods();
+  if(id){
+    const sp = SPONSORS.find(s=>s.id===id); if(!sp) return;
+    document.getElementById('sp-id').value = id;
+    document.getElementById('sponsor-modal-title').textContent='스폰서십 수정';
+    document.getElementById('sp-brand').value = sp.brand||'';
+    document.getElementById('sp-dept').value = sp.dept||'';
+    const rawBudget=(sp.budget||'').toString().replace(/[^0-9]/g,'');
+    document.getElementById('sp-budget').value = rawBudget?Number(rawBudget).toLocaleString('ko-KR'):'';
+    document.getElementById('sp-note').value = sp.note||'';
+    spPeriods = Array.isArray(sp.periods)?[...sp.periods]:[];
+    setSpStatus(sp.status||'pending');
+    renderSpPeriods();
+    document.getElementById('sp-del-btn').style.display='';
+  }
+  document.getElementById('sponsor-ovl').classList.add('open');
+};
+window.closeSponsorModal = function(){ document.getElementById('sponsor-ovl').classList.remove('open'); };
+
+window.saveSponsor = async function(){
+  const brand = document.getElementById('sp-brand').value.trim();
+  if(!brand){ showToast('브랜드명을 입력하세요'); return; }
+  const eid = document.getElementById('sp-id').value;
+  const rawBudget = (document.getElementById('sp-budget').value||'').replace(/,/g,'');
+  const obj = {
+    id: eid || 'sp_'+Date.now(),
+    brand,
+    dept: document.getElementById('sp-dept').value.trim(),
+    budget: rawBudget,
+    status: 'confirmed',
+    periods: getSpPeriodsFromDOM(),
+    note: document.getElementById('sp-note').value.trim(),
+    created: eid ? (SPONSORS.find(s=>s.id===eid)||{}).created||Date.now() : Date.now(),
+    updated: Date.now()
+  };
+  if(eid){ const i=SPONSORS.findIndex(s=>s.id===eid); if(i>=0) SPONSORS[i]=obj; else SPONSORS.push(obj); }
+  else { SPONSORS.push(obj); }
+  await set(ref(db,'sponsors'), SPONSORS);
+  closeSponsorModal();
+  showToast(eid?'수정되었습니다':'스폰서십이 추가되었습니다');
+  renderCalendar();
+};
+
+window.deleteSponsor = async function(){
+  const eid = document.getElementById('sp-id').value; if(!eid) return;
+  if(!confirm('이 스폰서십을 삭제하시겠습니까?')) return;
+  SPONSORS = SPONSORS.filter(s=>s.id!==eid);
+  await set(ref(db,'sponsors'), SPONSORS);
+  closeSponsorModal();
+  showToast('삭제되었습니다');
+  renderCalendar();
+};
+
+// 달력에서 스폰서십 클릭 → 수정 모달
+window.openSponsorFromCal = function(spBaseId){
+  const sp = SPONSORS.find(s=>s.id===spBaseId);
+  if(sp) openSponsorModal(sp.id);
+};
+
 window.gotoCalendar=function(){ showView('calendar'); renderCalendar(); };
 window.gotoInquiry=function(){ showView('inquiry'); renderInquiryList(); };
 window.gotoList=gotoList; window.gotoMonthly=function(){
@@ -1311,91 +1452,224 @@ function renderList(){
 //  OPEN REPORT
 // ════════════════════════════════════
 window.openReport=async function(id){
-  let camp=CAMPS.find(c=>c.id===id);
-  if(!camp){
-    const rd=REPORTS[id];
-    if(rd&&rd.cfg){
-      camp={id,client:rd.cfg.client||'',campaign:rd.cfg.campaign||'',agency:rd.cfg.agency||'',start:rd.cfg.start||'',end:rd.cfg.end||'',products:rd.products||[]};
-    } else {
-      showToast('캠페인을 찾을 수 없습니다');return;
+  try {
+    let camp=CAMPS.find(c=>c.id===id);
+    if(!camp){
+      const rd=REPORTS[id];
+      if(rd&&rd.cfg){
+        camp={id,client:rd.cfg.client||'',campaign:rd.cfg.campaign||'',agency:rd.cfg.agency||'',start:rd.cfg.start||'',end:rd.cfg.end||'',products:rd.products||[]};
+      } else {
+        showToast('캠페인을 찾을 수 없습니다');return;
+      }
     }
+    curCampId=id; curTab=0;
+    const raw=REPORTS[id];
+    curRD=raw||{cfg:{client:camp.client,campaign:camp.campaign||camp.client,agency:camp.agency,start:camp.start,end:camp.end,budget:camp.budget||'',contact:camp.contact||'',email:camp.email||'',bs_periods:camp.bs_periods||[]},products:camp.products||[],data:{}};
+    if(!curRD.products) curRD.products=[];
+    if(!curRD.data) curRD.data={};
+    if(!curRD.cfg) curRD.cfg={};
+    curRD.products.forEach(p=>{if(!curRD.data[p])curRD.data[p]={};});
+    if(!raw){
+      REPORTS[id]=curRD;
+      saveRD(id,curRD).catch(e=>console.error('saveRD error:',e));
+    }
+    showView('report');
+    if(isAgency){
+      document.getElementById('agb').style.display='flex';
+      document.getElementById('rnav').style.display='none';
+      document.getElementById('r-setup').style.display='none';
+      document.getElementById('agdf').style.display='flex';
+      document.getElementById('af-s').value=curRD.cfg.start||'';
+      document.getElementById('af-e').value=curRD.cfg.end||'';
+      document.getElementById('agb-title').textContent=curRD.cfg.campaign||'광고 성과 리포트';
+      document.getElementById('agb-sub').textContent=(curRD.cfg.start&&curRD.cfg.end)?`${curRD.cfg.start} ~ ${curRD.cfg.end}`:'';
+      document.getElementById('agb-badge').textContent=curRD.cfg.agency||'';
+    } else {
+      document.getElementById('agb').style.display='none';
+      document.getElementById('rnav').style.display='flex';
+      document.getElementById('r-setup').style.display='';
+      document.getElementById('agdf').style.display='none';
+      fillRSetup();
+    }
+    renderRHeader();
+    renderRProdChips();
+    renderRMetrics();
+    renderRTabs();
+    renderRTable();
+    if(!isAgency) renderSidebar();
+  } catch(e) {
+    console.error('openReport error:', e);
+    showToast('리포트를 여는 중 오류가 발생했습니다: '+e.message);
   }
-  curCampId=id; curTab=0;
-  const raw=REPORTS[id];
-  curRD=raw||{cfg:{client:camp.client,campaign:camp.campaign||camp.client,agency:camp.agency,start:camp.start,end:camp.end,budget:camp.budget||'',contact:camp.contact||'',email:camp.email||'',bs_periods:camp.bs_periods||[]},products:camp.products||[],data:{}};
-  // REPORTS에 없으면 즉시 생성
-  if(!raw){
-    (curRD.products||[]).forEach(p=>{if(!curRD.data[p])curRD.data[p]={};});
-    REPORTS[id]=curRD;
-    saveRD(id,curRD);
-  }
-  (curRD.products||[]).forEach(p=>{if(!curRD.data[p])curRD.data[p]={};});
-  showView('report');
-  if(isAgency){
-    document.getElementById('agb').style.display='flex';
-    document.getElementById('rnav').style.display='none';
-    document.getElementById('r-setup').style.display='none';
-    document.getElementById('agdf').style.display='flex';
-    document.getElementById('af-s').value=curRD.cfg.start||'';
-    document.getElementById('af-e').value=curRD.cfg.end||'';
-    document.getElementById('agb-title').textContent=curRD.cfg.campaign||'광고 성과 리포트';
-    document.getElementById('agb-sub').textContent=(curRD.cfg.start&&curRD.cfg.end)?`${curRD.cfg.start} ~ ${curRD.cfg.end}`:'';
-    document.getElementById('agb-badge').textContent=curRD.cfg.agency||'';
-  } else {
-    document.getElementById('agb').style.display='none';
-    document.getElementById('rnav').style.display='flex';
-    document.getElementById('r-setup').style.display='';
-    document.getElementById('agdf').style.display='none';
-    fillRSetup();
-  }
-  renderRHeader(); renderRProdChips(); renderRMetrics(); renderRTabs(); renderRTable();
-  if(!isAgency) renderSidebar();
-};
+}
 window.onAgFilter=function(){ renderRTable(); renderRMetrics(); };
 window.resetAgFilter=function(){ document.getElementById('af-s').value=curRD.cfg.start||''; document.getElementById('af-e').value=curRD.cfg.end||''; window.onAgFilter(); };
+
+// 캠페인 설정 편집용 바텀시트 기간
+let rcBsPeriods = [];
+
+window.rcAddBsPeriod = function(start='', end=''){
+  rcBsPeriods.push({start, end});
+  renderRcBsPeriods();
+};
+window.rcRemoveBsPeriod = function(i){
+  rcBsPeriods.splice(i,1);
+  renderRcBsPeriods();
+};
+function renderRcBsPeriods(){
+  const el=document.getElementById('rc-bs-periods'); if(!el) return;
+  el.innerHTML=rcBsPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-rc-bs-row="${i}">
+      <input type="date" class="rc-bs-start" data-idx="${i}" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="rc-bs-end" data-idx="${i}" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="rcRemoveBsPeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
+    </div>`).join('');
+}
+function getRcBsPeriodsFromDOM(){
+  const rows=document.querySelectorAll('#rc-bs-periods [data-rc-bs-row]');
+  return Array.from(rows).map(r=>({
+    start:r.querySelector('.rc-bs-start')?.value||'',
+    end:r.querySelector('.rc-bs-end')?.value||''
+  })).filter(p=>p.start||p.end);
+}
+
+// 새 캠페인 모달용 상품 선택
+const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '일반 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '샘플링', '대회 티켓팅(접수) 대행'];
+let nmSelectedProds = [];
+
+window.toggleNmProd = function(p){
+  const i = nmSelectedProds.indexOf(p);
+  if(i>=0) nmSelectedProds.splice(i,1); else nmSelectedProds.push(p);
+  renderNmProdChips();
+};
+
+function renderNmProdChips(){
+  const el = document.getElementById('nm-prod-chips'); if(!el) return;
+  el.innerHTML = ALL_PRODUCTS.map(p=>{
+    const sel = nmSelectedProds.includes(p);
+    const s = sel?'border:1.5px solid var(--blu);background:var(--blu-bg);color:var(--blu)':'border:1.5px solid var(--bdr2);background:var(--surf);color:var(--t2)';
+    return '<button type="button" onclick="toggleNmProd(\'' + p.replace(/'/g,"\'") + '\')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;transition:all .12s;' + s + '">' + p + '</button>';
+  }).join('');
+  const hidden = document.getElementById('nm-prods');
+  if(hidden) hidden.value = nmSelectedProds.join(', ');
+}
+
+// 새 캠페인 모달용 바텀시트 기간
+let nmBsPeriods = [];
+window.nmAddBsPeriod = function(start='',end=''){
+  nmBsPeriods.push({start,end}); renderNmBsPeriods();
+};
+window.nmRemoveBsPeriod = function(i){
+  nmBsPeriods.splice(i,1); renderNmBsPeriods();
+};
+function renderNmBsPeriods(){
+  const el=document.getElementById('nm-bs-periods'); if(!el) return;
+  el.innerHTML=nmBsPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-nm-bs-row="${i}">
+      <input type="date" class="nm-bs-start" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="nm-bs-end" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="nmRemoveBsPeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
+    </div>`).join('');
+}
+function getNmBsPeriodsFromDOM(){
+  const rows=document.querySelectorAll('#nm-bs-periods [data-nm-bs-row]');
+  return Array.from(rows).map(r=>({
+    start:r.querySelector('.nm-bs-start')?.value||'',
+    end:r.querySelector('.nm-bs-end')?.value||''
+  })).filter(p=>p.start||p.end);
+}
+
+window.addBsPeriod = function(start='', end=''){
+  bsPeriods.push({start, end});
+  renderBsPeriods();
+};
+
+window.removeBsPeriod = function(i){
+  bsPeriods.splice(i, 1);
+  renderBsPeriods();
+};
+
+function renderBsPeriods(){
+  const el = document.getElementById('inq-bs-periods'); if(!el) return;
+  el.innerHTML = bsPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-bs-row="${i}">
+      <input type="date" class="bs-start-input" data-idx="${i}" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="bs-end-input" data-idx="${i}" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="removeBsPeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+
+
 
 // ════════════════════════════════════
 //  REPORT — SETUP
 // ════════════════════════════════════
 function fillRSetup(){
-  const c=curRD.cfg;
-  document.getElementById('rc-client').value=c.client||'';
-  document.getElementById('rc-campaign').value=c.campaign||'';
-  document.getElementById('rc-agency').value=c.agency||'';
-  document.getElementById('rc-start').value=c.start||'';
-  document.getElementById('rc-end').value=c.end||'';
-  const rcBudget=document.getElementById('rc-budget');
-  if(rcBudget) rcBudget.value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
-  document.getElementById('rc-token').value=c.token||'';
-  // 데이터가 있으면 읽기 전용 뷰, 없으면 편집 뷰
-  if(c.client||c.campaign){
-    rSetupViewMode();
-  } else {
-    rSetupEditMode();
-  }
+  try {
+    const c=curRD.cfg;
+    const setVal=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+    setVal('rc-client', c.client);
+    setVal('rc-campaign', c.campaign);
+    setVal('rc-agency', c.agency);
+    setVal('rc-start', c.start);
+    setVal('rc-end', c.end);
+    setVal('rc-token', c.token);
+    const rcBudget=document.getElementById('rc-budget');
+    if(rcBudget) rcBudget.value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
+    const rcContact=document.getElementById('rc-contact'); if(rcContact) rcContact.value=c.contact||'';
+    const rcEmail=document.getElementById('rc-email'); if(rcEmail) rcEmail.value=c.email||'';
+    if(typeof rcBsPeriods !== 'undefined'){
+      rcBsPeriods=Array.isArray(c.bs_periods)&&c.bs_periods.length?[...c.bs_periods]:(c.bs_start?[{start:c.bs_start,end:c.bs_end}]:[]);
+      if(typeof renderRcBsPeriods==='function') renderRcBsPeriods();
+    }
+    if(c.client||c.campaign){ rSetupViewMode(); } else { rSetupEditMode(); }
+  } catch(e){ console.error('fillRSetup error:', e); rSetupViewMode(); }
 }
+
 function rSetupViewMode(){
-  const c=curRD.cfg;
-  document.getElementById('rv-client').textContent=c.client||'—';
-  document.getElementById('rv-campaign').textContent=c.campaign||'—';
-  document.getElementById('rv-agency').textContent=c.agency||'—';
-  document.getElementById('rv-start').textContent=c.start||'—';
-  document.getElementById('rv-end').textContent=c.end||'—';
-  const budgetEl=document.getElementById('rv-budget');
-  if(budgetEl) budgetEl.textContent=c.budget?Number(c.budget).toLocaleString('ko-KR')+'원':'—';
-  document.getElementById('rv-token').textContent=c.token||'(미설정)';
-  const rvContact=document.getElementById('rv-contact'); if(rvContact) rvContact.textContent=c.contact||'—';
-  const rvEmail=document.getElementById('rv-email'); if(rvEmail) rvEmail.textContent=c.email||'—';
-  const rvBsWrap=document.getElementById('rv-bs-wrap');
-  const rvBsPeriods=document.getElementById('rv-bs-periods');
-  if(rvBsWrap&&rvBsPeriods){
-    const bsArr=Array.isArray(c.bs_periods)&&c.bs_periods.length?c.bs_periods:(c.bs_start?[{start:c.bs_start,end:c.bs_end}]:[]);
-    if(bsArr.length){ rvBsWrap.style.display=''; rvBsPeriods.textContent=bsArr.map(p=>`${p.start} ~ ${p.end}`).join(' · '); }
-    else { rvBsWrap.style.display='none'; }
-  }
-  document.getElementById('r-setup-view').style.display='';
-  document.getElementById('r-setup-edit').style.display='none';
+  try {
+    const c = curRD.cfg;
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v||'—'; };
+    set('rv-client',   c.client);
+    set('rv-campaign', c.campaign);
+    set('rv-agency',   c.agency);
+    set('rv-start',    c.start);
+    set('rv-end',      c.end);
+    const budgetEl = document.getElementById('rv-budget');
+    if(budgetEl) budgetEl.textContent = c.budget ? Number(c.budget).toLocaleString('ko-KR')+'원' : '—';
+    const tokenEl = document.getElementById('rv-token');
+    if(tokenEl) tokenEl.textContent = c.token||'(미설정)';
+    const contactEl = document.getElementById('rv-contact');
+    if(contactEl) contactEl.textContent = c.contact||'—';
+    const emailEl = document.getElementById('rv-email');
+    if(emailEl) emailEl.textContent = c.email||'—';
+    const rvBsWrap = document.getElementById('rv-bs-wrap');
+    const rvBsPeriods = document.getElementById('rv-bs-periods');
+    if(rvBsWrap && rvBsPeriods){
+      const bsArr = Array.isArray(c.bs_periods) && c.bs_periods.length
+        ? c.bs_periods : (c.bs_start ? [{start:c.bs_start, end:c.bs_end}] : []);
+      rvBsWrap.style.display = bsArr.length ? '' : 'none';
+      if(bsArr.length) rvBsPeriods.textContent = bsArr.map(p=>`${p.start} ~ ${p.end}`).join(' · ');
+    }
+    const viewEl = document.getElementById('r-setup-view');
+    const editEl = document.getElementById('r-setup-edit');
+    if(viewEl) viewEl.style.display = '';
+    if(editEl) editEl.style.display = 'none';
+  } catch(e) { console.error('rSetupViewMode:', e); }
 }
+
 window.rSetupEditMode=function(){
   const c=curRD.cfg;
   document.getElementById('rc-client').value=c.client||'';
@@ -1463,7 +1737,7 @@ function renderRHeader(){
 //  REPORT — PRODUCTS
 // ════════════════════════════════════
 function renderRProdChips(){
-  document.getElementById('r-prods').innerHTML=curRD.products.map((p,i)=>
+  document.getElementById('r-prods').innerHTML=(curRD.products||[]).map((p,i)=>
     `<span class="pch">${p}<span class="x" onclick="rRemProd(${i})">×</span></span>`).join('');
 }
 window.rAddProd=function(){
@@ -2023,6 +2297,18 @@ function renderCalendar(){
       events.push({id:inq.id+'_'+pi, label, start:p.start, end:p.end, status});
     });
   });
+  // SPONSORS (스폰서십) 이벤트 추가 - 보라색
+  SPONSORS.forEach((sp,si)=>{
+    const status = sp.status||'pending';
+    if(statusFilter!=='all' && status!==statusFilter) return;
+    const label = sp.brand||(sp.dept||'스폰서십');
+    const periods = Array.isArray(sp.periods)&&sp.periods.length ? sp.periods : [];
+    periods.forEach((p,pi)=>{
+      if(!p.start||!p.end) return;
+      events.push({id:'sp_'+si+'_'+pi, label, start:p.start, end:p.end, status, isSponsor:true});
+    });
+  });
+
   // CAMPS에서 바텀시트 있고 INQUIRIES에 없는 것
   getBottomsheetCamps().forEach(c=>{
     // inqId(문의에서 생성된 캠페인)이거나 문의에 campId로 연결된 경우 제외
@@ -2066,9 +2352,13 @@ function renderCalendar(){
       const isSolo  = isStart && isEnd;
       const isRowStart = isStart || dow === 0;
       const posCls  = isSolo ? 'ev-solo' : (isStart||dow===0) ? 'ev-start' : isEnd ? 'ev-end' : 'ev-mid';
-      const statusCls = e.status === 'confirmed' ? 'ev-confirmed' : 'ev-pending';
+      const statusCls = e.isSponsor
+        ? (e.status==='confirmed' ? 'ev-sponsor-confirmed' : 'ev-sponsor-pending')
+        : (e.status==='confirmed' ? 'ev-confirmed' : 'ev-pending');
       const label = isRowStart ? e.label : '&nbsp;';
-      evHtml += `<span class="cal-event ${posCls} ${statusCls}" title="${e.label} (${e.bs_start||e.start}~${e.bs_end||e.end})">${label}</span>`;
+      const spId = e.isSponsor ? e.id.replace(/_\d+$/, '') : '';
+      const clickAttr = e.isSponsor ? ` onclick="openSponsorModal('${spId}')" style="cursor:pointer"` : '';
+      evHtml += `<span class="cal-event ${posCls} ${statusCls}"${clickAttr} title="${e.isSponsor?'[스폰서십] ':''}${e.label} (${e.start}~${e.end})">${label}</span>`;
     });
 
     html2 += `<div class="${cls}">${dayNumHtml}${evHtml}</div>`;
@@ -2089,112 +2379,6 @@ function getProductList(){ return FIXED_PRODUCTS; }
 
 // 바텀시트 기간 행 추가
 let bsPeriods = []; // [{start:'', end:''}]
-
-// 캠페인 설정 편집용 바텀시트 기간
-let rcBsPeriods = [];
-
-window.rcAddBsPeriod = function(start='', end=''){
-  rcBsPeriods.push({start, end});
-  renderRcBsPeriods();
-};
-window.rcRemoveBsPeriod = function(i){
-  rcBsPeriods.splice(i,1);
-  renderRcBsPeriods();
-};
-function renderRcBsPeriods(){
-  const el=document.getElementById('rc-bs-periods'); if(!el) return;
-  el.innerHTML=rcBsPeriods.map((p,i)=>`
-    <div style="display:flex;gap:8px;align-items:center" data-rc-bs-row="${i}">
-      <input type="date" class="rc-bs-start" data-idx="${i}" value="${p.start}"
-        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
-      <span style="font-size:11px;color:var(--t3)">~</span>
-      <input type="date" class="rc-bs-end" data-idx="${i}" value="${p.end}"
-        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
-      <button type="button" onclick="rcRemoveBsPeriod(${i})"
-        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
-    </div>`).join('');
-}
-function getRcBsPeriodsFromDOM(){
-  const rows=document.querySelectorAll('#rc-bs-periods [data-rc-bs-row]');
-  return Array.from(rows).map(r=>({
-    start:r.querySelector('.rc-bs-start')?.value||'',
-    end:r.querySelector('.rc-bs-end')?.value||''
-  })).filter(p=>p.start||p.end);
-}
-
-// 새 캠페인 모달용 상품 선택
-const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '일반 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '샘플링', '대회 티켓팅(접수) 대행'];
-let nmSelectedProds = [];
-
-window.toggleNmProd = function(p){
-  const i = nmSelectedProds.indexOf(p);
-  if(i>=0) nmSelectedProds.splice(i,1); else nmSelectedProds.push(p);
-  renderNmProdChips();
-};
-
-function renderNmProdChips(){
-  const el = document.getElementById('nm-prod-chips'); if(!el) return;
-  el.innerHTML = ALL_PRODUCTS.map(p=>{
-    const sel = nmSelectedProds.includes(p);
-    const s = sel?'border:1.5px solid var(--blu);background:var(--blu-bg);color:var(--blu)':'border:1.5px solid var(--bdr2);background:var(--surf);color:var(--t2)';
-    return '<button type="button" onclick="toggleNmProd(\'' + p.replace(/'/g,"\'") + '\')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;transition:all .12s;' + s + '">' + p + '</button>';
-  }).join('');
-  const hidden = document.getElementById('nm-prods');
-  if(hidden) hidden.value = nmSelectedProds.join(', ');
-}
-
-// 새 캠페인 모달용 바텀시트 기간
-let nmBsPeriods = [];
-window.nmAddBsPeriod = function(start='',end=''){
-  nmBsPeriods.push({start,end}); renderNmBsPeriods();
-};
-window.nmRemoveBsPeriod = function(i){
-  nmBsPeriods.splice(i,1); renderNmBsPeriods();
-};
-function renderNmBsPeriods(){
-  const el=document.getElementById('nm-bs-periods'); if(!el) return;
-  el.innerHTML=nmBsPeriods.map((p,i)=>`
-    <div style="display:flex;gap:8px;align-items:center" data-nm-bs-row="${i}">
-      <input type="date" class="nm-bs-start" value="${p.start}"
-        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
-      <span style="font-size:11px;color:var(--t3)">~</span>
-      <input type="date" class="nm-bs-end" value="${p.end}"
-        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
-      <button type="button" onclick="nmRemoveBsPeriod(${i})"
-        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
-    </div>`).join('');
-}
-function getNmBsPeriodsFromDOM(){
-  const rows=document.querySelectorAll('#nm-bs-periods [data-nm-bs-row]');
-  return Array.from(rows).map(r=>({
-    start:r.querySelector('.nm-bs-start')?.value||'',
-    end:r.querySelector('.nm-bs-end')?.value||''
-  })).filter(p=>p.start||p.end);
-}
-
-window.addBsPeriod = function(start='', end=''){
-  bsPeriods.push({start, end});
-  renderBsPeriods();
-};
-
-window.removeBsPeriod = function(i){
-  bsPeriods.splice(i, 1);
-  renderBsPeriods();
-};
-
-function renderBsPeriods(){
-  const el = document.getElementById('inq-bs-periods'); if(!el) return;
-  el.innerHTML = bsPeriods.map((p,i)=>`
-    <div style="display:flex;gap:8px;align-items:center" data-bs-row="${i}">
-      <input type="date" class="bs-start-input" data-idx="${i}" value="${p.start}"
-        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
-      <span style="font-size:11px;color:var(--t3)">~</span>
-      <input type="date" class="bs-end-input" data-idx="${i}" value="${p.end}"
-        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
-      <button type="button" onclick="removeBsPeriod(${i})"
-        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px;flex-shrink:0">✕</button>
-    </div>`).join('');
-}
 
 function getBsPeriodsFromDOM(){
   const rows = document.querySelectorAll('#inq-bs-periods [data-bs-row]');
