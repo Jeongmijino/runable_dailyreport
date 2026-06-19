@@ -353,6 +353,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   <div class="sb-sec">문의</div>
   <button class="sbi" id="sb-cal" onclick="gotoCalendar()">바텀시트 달력</button>
   <button class="sbi" id="sb-inq" onclick="gotoInquiry()">광고 문의</button>
+  <button class="sbi" id="sb-contacts" onclick="gotoContacts()">담당자 DB</button>
   <div class="sb-div"></div>
   <div class="sb-sec">랩사</div>
   <div id="sb-ags"></div>
@@ -430,7 +431,13 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">시작일</div><div id="rv-start" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">종료일</div><div id="rv-end" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">예산</div><div id="rv-budget" style="font-size:13px;font-weight:600;color:#2f9e44"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">담당자</div><div id="rv-contact" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">이메일</div><div id="rv-email" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">공유 코드</div><div id="rv-token" style="font-size:13px;font-weight:600;color:var(--blu);font-family:monospace"></div></div>
+        </div>
+        <div id="rv-bs-wrap" style="margin-top:8px;display:none">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">바텀시트 운영 기간</div>
+          <div id="rv-bs-periods" style="font-size:12px;color:var(--blu);font-weight:600"></div>
         </div>
       </div>
       <!-- 편집 뷰 -->
@@ -440,7 +447,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <div class="fld"><label>광고주</label><input type="text" id="rc-client"></div>
           <div class="fld"><label>캠페인명</label><input type="text" id="rc-campaign"></div>
           <div class="fld"><label>랩사명</label><input type="text" id="rc-agency"></div>
-          <div class="fld"><label>예산</label><input type="text" id="rc-budget" placeholder="예: 5,000,000" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')"></div>
+          <div class="fld"><label>예산</label><input type="text" id="rc-budget" placeholder="예: 5,000,000" oninput="formatBudgetInput(this)"></div>
           <div class="fld"><label>시작일</label><input type="date" id="rc-start" onchange="rDateChange()"></div>
           <div class="fld"><label>종료일</label><input type="date" id="rc-end" onchange="rDateChange()"></div>
           <div class="fld">
@@ -450,6 +457,13 @@ tr.sumr td.rc .ci{color:#fcc2d7}
               <button class="btn btn-sm" onclick="genToken()" title="랜덤 생성">🎲 랜덤</button>
             </div>
           </div>
+          <div class="fld"><label>담당자 성함</label><input type="text" id="rc-contact" placeholder="예: 홍길동"></div>
+          <div class="fld"><label>이메일</label><input type="email" id="rc-email" placeholder="예: hong@brand.com"></div>
+        </div>
+        <div class="fld" style="margin-top:10px">
+          <label>바텀시트 운영 기간 <span style="font-weight:400;color:var(--t3)">(달력 표시 · 여러 기간 추가 가능)</span></label>
+          <div id="rc-bs-periods" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+          <button type="button" onclick="rcAddBsPeriod()" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r);border:1.5px dashed var(--bdr2);background:transparent;color:var(--t2);cursor:pointer">+ 기간 추가</button>
         </div>
         <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
           <button class="btn btn-p" onclick="rSaveCfg()">저장하기</button>
@@ -541,6 +555,39 @@ tr.sumr td.rc .ci{color:#fcc2d7}
     <div class="inq-list" id="inq-list"></div>
   </div>
 
+  <!-- CONTACTS -->
+  <div id="v-contacts" style="display:none">
+    <div class="ph">
+      <div class="ph-l"><div class="ey">Contact Database</div><div class="pt">담당자 DB</div></div>
+      <div class="ph-r">
+        <div class="srch">
+          <span class="srch-ico">🔍</span>
+          <input id="ct-srch" placeholder="이름 · 이메일 · 광고주 검색" oninput="renderContacts()">
+        </div>
+        <button class="btn btn-sm" onclick="exportContactsCSV()" style="white-space:nowrap">CSV 내보내기</button>
+      </div>
+    </div>
+    <div style="padding:0 28px 32px">
+      <div id="ct-stats" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap"></div>
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:2px solid var(--bdr)">
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">담당자</th>
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">대행사</th>
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">이메일</th>
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">광고주</th>
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">캠페인</th>
+              <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">출처</th>
+            </tr>
+          </thead>
+          <tbody id="ct-tbody"></tbody>
+        </table>
+        <div id="ct-empty" style="display:none;padding:48px;text-align:center;color:var(--t3);font-size:13px">담당자 정보가 없습니다<br><span style="font-size:11px">광고 문의 또는 캠페인 설정에서 담당자 정보를 입력하세요</span></div>
+      </div>
+    </div>
+  </div>
+
   <!-- SETTINGS -->
   <div id="v-settings" style="display:none">
     <div class="ph"><div class="ph-l"><div class="ey">Configuration</div><div class="pt">설정</div></div></div>
@@ -590,8 +637,21 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="mfld"><label>시작일 *</label><input type="date" id="nm-start"></div>
       <div class="mfld"><label>종료일 *</label><input type="date" id="nm-end"></div>
     </div>
-    <div class="mfld"><label>예산</label><input type="text" id="nm-budget" placeholder="예: 5,000,000" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')"></div>
-    <div class="mfld"><label>광고 상품 (쉼표 구분)</label><input type="text" id="nm-prods" placeholder="바텀시트, 메인 띠배너, 기록면 띠배너"></div>
+    <div class="mfld"><label>예산</label><input type="text" id="nm-budget" placeholder="예: 5,000,000" oninput="formatBudgetInput(this)"></div>
+    <div class="mfr">
+      <div class="mfld"><label>담당자 성함</label><input type="text" id="nm-contact" placeholder="예: 홍길동"></div>
+      <div class="mfld"><label>이메일</label><input type="email" id="nm-email" placeholder="예: hong@brand.com"></div>
+    </div>
+    <div class="mfld">
+      <label>바텀시트 운영 기간 <span style="font-weight:400;color:var(--t3)">(달력 표시 · 여러 기간 추가 가능)</span></label>
+      <div id="nm-bs-periods" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+      <button type="button" onclick="nmAddBsPeriod()" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r);border:1.5px dashed var(--bdr2);background:transparent;color:var(--t2);cursor:pointer;width:100%">+ 기간 추가</button>
+    </div>
+    <div class="mfld">
+      <label>광고 상품 <span style="font-weight:400;color:var(--t3)">(클릭하여 선택)</span></label>
+      <div id="nm-prod-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+      <input type="hidden" id="nm-prods">
+    </div>
     <div class="mac">
       <button class="btn" onclick="closeNewModal()">취소</button>
       <button class="btn btn-p" onclick="saveCampaign()">저장</button>
@@ -1037,17 +1097,83 @@ function renderAll(){
 // ════════════════════════════════════
 function showView(v){
   curView=v;
-  ['list','report','monthly','settings','calendar','inquiry'].forEach(n=>{ document.getElementById('v-'+n).style.display=n===v?'':'none'; });
+  ['list','report','monthly','settings','calendar','inquiry','contacts'].forEach(n=>{ document.getElementById('v-'+n).style.display=n===v?'':'none'; });
   document.getElementById('sb-list').className='sbi'+(v==='list'?' on':'');
   document.getElementById('sb-mo').className='sbi'+(v==='monthly'?' on':'');
   document.getElementById('sb-stg').className='sbi'+(v==='settings'?' on':'');
   document.getElementById('sb-cal').className='sbi'+(v==='calendar'?' on':'');
   document.getElementById('sb-inq').className='sbi'+(v==='inquiry'?' on':'');
+  const sbCt=document.getElementById('sb-contacts'); if(sbCt) sbCt.className='sbi'+(v==='contacts'?' on':'');
   document.getElementById('main').scrollTop=0;
 }
 function gotoList(){ showView('list'); curCampId=null; curRD=null; history.replaceState(null,'',location.pathname); const agf=document.getElementById('ag-filter'); if(agf) agf.value=''; renderAll(); }
 function gotoMonthly(){ showView('monthly'); renderSidebar(); renderMonthChips('month-chips-2'); renderMonthly(); }
 function gotoSettings(){ showView('settings'); renderSettings(); renderTokenList(); }
+window.gotoContacts=function(){
+  showView('contacts');
+  renderContacts();
+};
+
+function renderContacts(){
+  // CAMPS와 INQUIRIES 모두에서 담당자 수집
+  const contacts=[];
+  const seen=new Set();
+
+  // 캠페인에서
+  CAMPS.forEach(c=>{
+    if(!c.contact&&!c.email) return;
+    const key=(c.contact||'')+'|'+(c.email||'');
+    const entry={name:c.contact||'',email:c.email||'',client:c.client||'',agency:c.agency||'',campaign:c.campaign||'',source:'캠페인'};
+    contacts.push(entry);
+  });
+
+  // 광고 문의에서
+  INQUIRIES.forEach(inq=>{
+    if(!inq.contact&&!inq.email) return;
+    const entry={name:inq.contact||'',email:inq.email||'',client:inq.client||'',agency:inq.agency||'',campaign:'',source:'광고 문의'};
+    contacts.push(entry);
+  });
+
+  // 검색 필터
+  const q=(document.getElementById('ct-srch')?.value||'').toLowerCase().trim();
+  const filtered=q?contacts.filter(c=>
+    c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||
+    c.client.toLowerCase().includes(q)||c.agency.toLowerCase().includes(q)
+  ):contacts;
+
+  // 통계
+  const uniqueEmails=new Set(contacts.map(c=>c.email).filter(Boolean));
+  document.getElementById('ct-stats').innerHTML=`
+    <div class="kpi gray" style="padding:12px 16px;min-width:120px"><div class="kl">전체 담당자</div><div class="kv" style="color:var(--t1);font-size:18px">${contacts.length}</div></div>
+    <div class="kpi gray" style="padding:12px 16px;min-width:120px"><div class="kl">유니크 이메일</div><div class="kv" style="color:var(--blu);font-size:18px">${uniqueEmails.size}</div></div>`;
+
+  const tbody=document.getElementById('ct-tbody');
+  const empty=document.getElementById('ct-empty');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  tbody.innerHTML=filtered.map((c,i)=>`
+    <tr style="border-bottom:1px solid var(--bdr);${i%2===0?'':'background:var(--bg)'}">
+      <td style="padding:10px 16px;font-size:12px;font-weight:600;color:var(--t1)">${c.name||'—'}</td>
+      <td style="padding:10px 16px;font-size:12px;color:var(--t2)">${c.agency||'—'}</td>
+      <td style="padding:10px 16px;font-size:12px;color:var(--blu)">${c.email?`<a href="mailto:${c.email}" style="color:var(--blu);text-decoration:none">${c.email}</a>`:'—'}</td>
+      <td style="padding:10px 16px;font-size:12px;color:var(--t1)">${c.client||'—'}</td>
+      <td style="padding:10px 16px;font-size:12px;color:var(--t2)">${c.campaign||'—'}</td>
+      <td style="padding:10px 16px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${c.source==='캠페인'?'var(--blu-bg)':'var(--amb-bg)'};color:${c.source==='캠페인'?'var(--blu)':'var(--amb)'}">${c.source}</span></td>
+    </tr>`).join('');
+}
+
+window.exportContactsCSV=function(){
+  const contacts=[];
+  CAMPS.forEach(c=>{if(c.contact||c.email) contacts.push([c.contact||'',c.email||'',c.client||'',c.agency||'',c.campaign||'','캠페인']);});
+  INQUIRIES.forEach(inq=>{if(inq.contact||inq.email) contacts.push([inq.contact||'',inq.email||'',inq.client||'',inq.agency||'','','광고 문의']);});
+  const csv=['담당자,이메일,광고주,대행사,캠페인,출처',...contacts.map(r=>r.map(v=>'"'+v+'"').join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='담당자DB_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  showToast('CSV 파일 다운로드 완료');
+};
+
 window.gotoCalendar=function(){ showView('calendar'); renderCalendar(); };
 window.gotoInquiry=function(){ showView('inquiry'); renderInquiryList(); };
 window.gotoList=gotoList; window.gotoMonthly=function(){
@@ -1157,7 +1283,7 @@ function renderListKpi(){
     <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div><div class="ks">click-through rate</div></div>`;
 }
 function renderList(){
-  const list=getFiltered().sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const list=getFiltered().sort((a,b)=>(b.created||0)-(a.created||0));
   const el=document.getElementById('clist');
   if(!list.length){el.innerHTML='<div class="empty">📋<br><br>캠페인이 없습니다<br><span style="font-size:12px">새 캠페인을 추가해보세요</span></div>';return;}
   el.innerHTML=list.map(c=>{
@@ -1252,6 +1378,15 @@ function rSetupViewMode(){
   const budgetEl=document.getElementById('rv-budget');
   if(budgetEl) budgetEl.textContent=c.budget?Number(c.budget).toLocaleString('ko-KR')+'원':'—';
   document.getElementById('rv-token').textContent=c.token||'(미설정)';
+  const rvContact=document.getElementById('rv-contact'); if(rvContact) rvContact.textContent=c.contact||'—';
+  const rvEmail=document.getElementById('rv-email'); if(rvEmail) rvEmail.textContent=c.email||'—';
+  const rvBsWrap=document.getElementById('rv-bs-wrap');
+  const rvBsPeriods=document.getElementById('rv-bs-periods');
+  if(rvBsWrap&&rvBsPeriods){
+    const bsArr=Array.isArray(c.bs_periods)&&c.bs_periods.length?c.bs_periods:(c.bs_start?[{start:c.bs_start,end:c.bs_end}]:[]);
+    if(bsArr.length){ rvBsWrap.style.display=''; rvBsPeriods.textContent=bsArr.map(p=>`${p.start} ~ ${p.end}`).join(' · '); }
+    else { rvBsWrap.style.display='none'; }
+  }
   document.getElementById('r-setup-view').style.display='';
   document.getElementById('r-setup-edit').style.display='none';
 }
@@ -1265,6 +1400,10 @@ window.rSetupEditMode=function(){
   const rcBudget=document.getElementById('rc-budget');
   if(rcBudget) rcBudget.value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
   document.getElementById('rc-token').value=c.token||'';
+  const rcContact=document.getElementById('rc-contact'); if(rcContact) rcContact.value=c.contact||'';
+  const rcEmail=document.getElementById('rc-email'); if(rcEmail) rcEmail.value=c.email||'';
+  rcBsPeriods=Array.isArray(c.bs_periods)&&c.bs_periods.length?[...c.bs_periods]:(c.bs_start?[{start:c.bs_start,end:c.bs_end}]:[]);
+  renderRcBsPeriods();
   document.getElementById('r-setup-view').style.display='none';
   document.getElementById('r-setup-edit').style.display='';
 };
@@ -1277,10 +1416,14 @@ window.rSaveCfg=async function(){
   curRD.cfg.token=document.getElementById('rc-token').value.trim();
   const rawBudget=(document.getElementById('rc-budget')?.value||'').replace(/,/g,'');
   curRD.cfg.budget=rawBudget;
+  curRD.cfg.contact=(document.getElementById('rc-contact')?.value||'').trim();
+  curRD.cfg.email=(document.getElementById('rc-email')?.value||'').trim();
+  curRD.cfg.bs_periods=getRcBsPeriodsFromDOM();
+  curRD.cfg.bs_start=curRD.cfg.bs_periods[0]?.start||'';
+  curRD.cfg.bs_end=curRD.cfg.bs_periods[0]?.end||'';
   try{
-    // syncCamp 내에서 budget 포함해서 저장
     const i=CAMPS.findIndex(c=>c.id===curCampId);
-    if(i>=0){ CAMPS[i]={...CAMPS[i],client:curRD.cfg.client,agency:curRD.cfg.agency,campaign:curRD.cfg.campaign,start:curRD.cfg.start,end:curRD.cfg.end,products:curRD.products,budget:rawBudget}; }
+    if(i>=0){ CAMPS[i]={...CAMPS[i],client:curRD.cfg.client,agency:curRD.cfg.agency,campaign:curRD.cfg.campaign,start:curRD.cfg.start,end:curRD.cfg.end,products:curRD.products,budget:rawBudget,contact:curRD.cfg.contact,email:curRD.cfg.email}; }
     await Promise.all([saveRD(curCampId,curRD), set(ref(db,'campaigns'),CAMPS)]);
     renderRHeader(); renderSidebar();
     if(statusEl){ statusEl.textContent='저장되었습니다'; statusEl.style.color='var(--grn)'; }
@@ -1690,7 +1833,11 @@ function renderMonthly(){
 window.openNewModal=function(){
   document.getElementById('nm-title').textContent='새 캠페인 추가';
   document.getElementById('nm-id').value='';
-  ['nm-client','nm-agency','nm-campaign','nm-start','nm-end','nm-prods'].forEach(id=>document.getElementById(id).value='');
+  ['nm-client','nm-agency','nm-campaign','nm-start','nm-end','nm-prods','nm-budget','nm-contact','nm-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  nmSelectedProds=[];
+  renderNmProdChips();
+  nmBsPeriods=[];
+  renderNmBsPeriods();
   document.getElementById('new-ovl').classList.add('open');
 };
 window.openEditModal=function(id){
@@ -1703,7 +1850,12 @@ window.openEditModal=function(id){
   document.getElementById('nm-start').value=c.start||'';
   document.getElementById('nm-end').value=c.end||'';
   document.getElementById('nm-budget').value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
-  document.getElementById('nm-prods').value=(c.products||[]).join(', ');
+  const nmCt=document.getElementById('nm-contact'); if(nmCt) nmCt.value=c.contact||'';
+  const nmEm=document.getElementById('nm-email'); if(nmEm) nmEm.value=c.email||'';
+  nmBsPeriods=Array.isArray(c.bs_periods)&&c.bs_periods.length?[...c.bs_periods]:(c.bs_start?[{start:c.bs_start,end:c.bs_end}]:[]);
+  renderNmBsPeriods();
+  nmSelectedProds=[...(c.products||[])];
+  renderNmProdChips();
   document.getElementById('new-ovl').classList.add('open');
 };
 window.closeNewModal=function(){ document.getElementById('new-ovl').classList.remove('open'); };
@@ -1715,17 +1867,20 @@ window.saveCampaign=async function(){
   const end=document.getElementById('nm-end').value;
   const products=document.getElementById('nm-prods').value.split(',').map(s=>s.trim()).filter(Boolean);
   const budget=document.getElementById('nm-budget').value.replace(/,/g,'');
+  const contact=(document.getElementById('nm-contact')?.value||'').trim();
+  const email=(document.getElementById('nm-email')?.value||'').trim();
+  const nmBsArr=getNmBsPeriodsFromDOM();
   if(!client||!agency||!campaign||!start||!end){showToast('필수 항목을 모두 입력하세요');return;}
   const eid=document.getElementById('nm-id').value;
   if(eid){
     const i=CAMPS.findIndex(c=>c.id===eid);
-    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign,start,end,products,budget};
-      const rd=REPORTS[eid];if(rd){rd.cfg={client,agency,campaign,start,end};rd.products=products;await saveRD(eid,rd);}
+    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign,start,end,products,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''};
+      const rd=REPORTS[eid];if(rd){rd.cfg={...rd.cfg,client,agency,campaign,start,end,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''};rd.products=products;await saveRD(eid,rd);}
     }
   } else {
     const id='c_'+Date.now();
-    CAMPS.push({id,client,agency,campaign,start,end,products,budget,created:Date.now()});
-    const rd={cfg:{client,campaign,agency,start,end},products,data:{}};
+    CAMPS.push({id,client,agency,campaign,start,end,products,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||'',created:Date.now()});
+    const rd={cfg:{client,campaign,agency,start,end,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''},products,data:{}};
     products.forEach(p=>rd.data[p]={});
     REPORTS[id]=rd; // 즉시 로컬 캐시에 반영 (상세페이지 진입 가능하게)
     await saveRD(id,rd);
@@ -1863,7 +2018,8 @@ function renderCalendar(){
   });
   // CAMPS에서 바텀시트 있고 INQUIRIES에 없는 것
   getBottomsheetCamps().forEach(c=>{
-    const alreadyInInq = INQUIRIES.some(q=>q.campId===c.id);
+    // inqId(문의에서 생성된 캠페인)이거나 문의에 campId로 연결된 경우 제외
+    const alreadyInInq = c.inqId || INQUIRIES.some(q=>q.campId===c.id);
     if(alreadyInInq) return;
     const status = 'pending';
     if(statusFilter!=='all' && status!==statusFilter) return;
@@ -1931,6 +2087,91 @@ function getProductList(){
 // 바텀시트 기간 행 추가
 let bsPeriods = []; // [{start:'', end:''}]
 
+// 캠페인 설정 편집용 바텀시트 기간
+let rcBsPeriods = [];
+
+window.rcAddBsPeriod = function(start='', end=''){
+  rcBsPeriods.push({start, end});
+  renderRcBsPeriods();
+};
+window.rcRemoveBsPeriod = function(i){
+  rcBsPeriods.splice(i,1);
+  renderRcBsPeriods();
+};
+function renderRcBsPeriods(){
+  const el=document.getElementById('rc-bs-periods'); if(!el) return;
+  el.innerHTML=rcBsPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-rc-bs-row="${i}">
+      <input type="date" class="rc-bs-start" data-idx="${i}" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="rc-bs-end" data-idx="${i}" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="rcRemoveBsPeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
+    </div>`).join('');
+}
+function getRcBsPeriodsFromDOM(){
+  const rows=document.querySelectorAll('#rc-bs-periods [data-rc-bs-row]');
+  return Array.from(rows).map(r=>({
+    start:r.querySelector('.rc-bs-start')?.value||'',
+    end:r.querySelector('.rc-bs-end')?.value||''
+  })).filter(p=>p.start||p.end);
+}
+
+// 새 캠페인 모달용 상품 선택
+const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '일반 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '샘플링', '대회 티켓팅(접수) 대행'];
+let nmSelectedProds = [];
+
+window.toggleNmProd = function(p){
+  const i = nmSelectedProds.indexOf(p);
+  if(i>=0) nmSelectedProds.splice(i,1); else nmSelectedProds.push(p);
+  renderNmProdChips();
+};
+
+function renderNmProdChips(){
+  const el = document.getElementById('nm-prod-chips'); if(!el) return;
+  el.innerHTML = ALL_PRODUCTS.map(p=>{
+    const sel = nmSelectedProds.includes(p);
+    return `<button type="button" onclick="toggleNmProd('${p.replace(/'/g,"\\'")}'"
+      style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
+      border:1.5px solid ${sel?'var(--blu)':'var(--bdr2)'};
+      background:${sel?'var(--blu-bg)':'var(--surf)'};
+      color:${sel?'var(--blu)':'var(--t2)'};cursor:pointer;transition:all .12s">${p}</button>`;
+  }).join('');
+  const hidden = document.getElementById('nm-prods');
+  if(hidden) hidden.value = nmSelectedProds.join(', ');
+}
+
+// 새 캠페인 모달용 바텀시트 기간
+let nmBsPeriods = [];
+window.nmAddBsPeriod = function(start='',end=''){
+  nmBsPeriods.push({start,end}); renderNmBsPeriods();
+};
+window.nmRemoveBsPeriod = function(i){
+  nmBsPeriods.splice(i,1); renderNmBsPeriods();
+};
+function renderNmBsPeriods(){
+  const el=document.getElementById('nm-bs-periods'); if(!el) return;
+  el.innerHTML=nmBsPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-nm-bs-row="${i}">
+      <input type="date" class="nm-bs-start" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="nm-bs-end" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="nmRemoveBsPeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
+    </div>`).join('');
+}
+function getNmBsPeriodsFromDOM(){
+  const rows=document.querySelectorAll('#nm-bs-periods [data-nm-bs-row]');
+  return Array.from(rows).map(r=>({
+    start:r.querySelector('.nm-bs-start')?.value||'',
+    end:r.querySelector('.nm-bs-end')?.value||''
+  })).filter(p=>p.start||p.end);
+}
+
 window.addBsPeriod = function(start='', end=''){
   bsPeriods.push({start, end});
   renderBsPeriods();
@@ -1965,8 +2206,7 @@ function getBsPeriodsFromDOM(){
 
 function renderProdChips(){
   const el = document.getElementById('inq-prod-chips'); if(!el) return;
-  const prods = getProductList();
-  el.innerHTML = prods.map(p=>{
+  el.innerHTML = ALL_PRODUCTS.map(p=>{
     const sel = selectedProducts.includes(p);
     return `<button type="button" onclick="toggleProd('${p.replace(/'/g,"\'")}')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1.5px solid ${sel?'var(--blu)':'var(--bdr2)'};background:${sel?'var(--blu-bg)':'var(--surf)'};color:${sel?'var(--blu)':'var(--t2)'};cursor:pointer;transition:all .12s">${p}</button>`;
   }).join('');
@@ -2093,12 +2333,21 @@ window.toggleInquiryStatus = async function(id){
         start: inq.start||'',
         end: inq.end||'',
         products,
+        budget: inq.budget||'',
+        contact: inq.contact||'',
+        email: inq.email||'',
         inqId: id,
         created: Date.now()
       };
       CAMPS.push(newCamp);
-      // 리포트 데이터도 같이 생성
-      const rd = {cfg:{client:newCamp.client,campaign:newCamp.campaign,agency:newCamp.agency,start:newCamp.start,end:newCamp.end,budget:inq.budget||''},products,data:{}};
+      // 리포트 데이터 - 문의 모든 필드 포함
+      const rd = {cfg:{
+        client:newCamp.client, campaign:newCamp.campaign, agency:newCamp.agency,
+        start:newCamp.start, end:newCamp.end,
+        budget:inq.budget||'',
+        contact:inq.contact||'', email:inq.email||'',
+        bs_periods:inq.bs_periods||[], bs_start:inq.bs_start||'', bs_end:inq.bs_end||''
+      },products,data:{}};
       products.forEach(p=>rd.data[p]={});
       REPORTS[campId] = rd;
       inq.campId = campId;
