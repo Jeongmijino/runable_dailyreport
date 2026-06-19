@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>러너블 · 광고운영</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root {
   --sb:#0f1117; --sb-text:#8b8fa8; --sb-hover:rgba(255,255,255,.05); --sb-on:rgba(255,255,255,.08);
@@ -13,7 +15,7 @@
   --pnk:#c2255c; --pnk-bg:#fff0f6; --pnk-bdr:#fcc2d7;
   --grn:#2f9e44; --grn-bg:#ebfbee;
   --amb:#e67700; --amb-bg:#fff9db;
-  --r:8px; --fn:'Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;
+  --r:8px; --fn:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--t1);font-size:13px}
@@ -251,12 +253,12 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 .cal-event.ev-mid{border-radius:0;margin-left:0;margin-right:0}
 .cal-event.ev-solo{border-radius:20px;margin-left:2px;margin-right:2px}
 .cal-event.ev-confirmed{background:#dbe4ff;color:var(--blu)}
-.cal-event.ev-pending{background:#fff0f6;color:var(--pnk);border:1px dashed var(--pnk-bdr)}
+.cal-event.ev-pending{background:#f1f3f5;color:#868e96;border:1px dashed #ced4da}
 .cal-legend{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
 .cal-legend-dot{width:10px;height:10px;border-radius:2px}
 .cal-legend-dot.confirmed{background:#dbe4ff;border:1px solid var(--blu)}
-.cal-legend-dot.pending{background:#fff0f6;border:1px dashed var(--pnk-bdr)}
+.cal-legend-dot.pending{background:#f1f3f5;border:1px dashed #ced4da}
 
 /* ── 광고 문의 뷰 ── */
 .inq-header{padding:0 28px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
@@ -426,6 +428,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">랩사명</div><div id="rv-agency" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">시작일</div><div id="rv-start" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">종료일</div><div id="rv-end" style="font-size:13px;font-weight:600;color:var(--t1)"></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">예산</div><div id="rv-budget" style="font-size:13px;font-weight:600;color:#2f9e44"></div></div>
           <div><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:3px">공유 코드</div><div id="rv-token" style="font-size:13px;font-weight:600;color:var(--blu);font-family:monospace"></div></div>
         </div>
       </div>
@@ -436,6 +439,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <div class="fld"><label>광고주</label><input type="text" id="rc-client"></div>
           <div class="fld"><label>캠페인명</label><input type="text" id="rc-campaign"></div>
           <div class="fld"><label>랩사명</label><input type="text" id="rc-agency"></div>
+          <div class="fld"><label>예산</label><input type="text" id="rc-budget" placeholder="예: 5,000,000" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')"></div>
           <div class="fld"><label>시작일</label><input type="date" id="rc-start" onchange="rDateChange()"></div>
           <div class="fld"><label>종료일</label><input type="date" id="rc-end" onchange="rDateChange()"></div>
           <div class="fld">
@@ -476,7 +480,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div><div class="mvt" id="mo-title">캠페인 성과</div>
         <div class="mvcard"><table><thead><tr>
           <th>캠페인</th><th>광고주</th><th>랩사</th><th>기간</th>
-          <th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th>
+          <th class="r" style="color:#2f9e44">예산</th><th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th>
         </tr></thead><tbody id="mo-tbody"></tbody></table></div>
       </div>
       <div><div class="mvt">랩사별 합산</div>
@@ -585,6 +589,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="mfld"><label>시작일 *</label><input type="date" id="nm-start"></div>
       <div class="mfld"><label>종료일 *</label><input type="date" id="nm-end"></div>
     </div>
+    <div class="mfld"><label>예산</label><input type="text" id="nm-budget" placeholder="예: 5,000,000" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')"></div>
     <div class="mfld"><label>광고 상품 (쉼표 구분)</label><input type="text" id="nm-prods" placeholder="바텀시트, 메인 띠배너, 기록면 띠배너"></div>
     <div class="mac">
       <button class="btn" onclick="closeNewModal()">취소</button>
@@ -614,7 +619,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="mfld"><label>광고주 *</label><input type="text" id="inq-client" placeholder="예: 아식스"></div>
       <div class="mfld"><label>대행사</label><input type="text" id="inq-agency" placeholder="예: 인크로스"></div>
     </div>
-    <div class="mfld"><label>예산</label><input type="text" id="inq-budget" placeholder="예: 5,000,000"></div>
+    <div class="mfld"><label>예산</label><input type="text" id="inq-budget" placeholder="예: 5,000,000" oninput="formatBudgetInput(this)" inputmode="numeric"></div>
     <div class="mfld"><label>확정 여부</label>
       <div class="status-toggle" id="inq-status-toggle">
         <button onclick="setInqStatus('pending')" id="inq-st-pending" class="active-pending">미정</button>
@@ -627,7 +632,23 @@ tr.sumr td.rc .ci{color:#fcc2d7}
         <div class="mfld"><label>시작일</label><input type="date" id="inq-start"></div>
         <div class="mfld"><label>종료일</label><input type="date" id="inq-end"></div>
       </div>
-      <div class="mfld"><label>광고 상품 (쉼표 구분)</label><input type="text" id="inq-products" placeholder="바텀시트, 메인 띠배너"></div>
+      <div class="mfld">
+        <label>광고 상품 <span style="font-weight:400;color:var(--t3)">(클릭하여 선택)</span></label>
+        <div id="inq-prod-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+        <input type="hidden" id="inq-products">
+      </div>
+      <div class="mfld" style="margin-top:6px">
+        <label>바텀시트 운영 기간 <span style="font-weight:400;color:var(--t3)">(달력에 표시 · 여러 기간 추가 가능)</span></label>
+        <div id="inq-bs-periods" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+        <button type="button" onclick="addBsPeriod()" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r);border:1.5px dashed var(--bdr2);background:transparent;color:var(--t2);cursor:pointer;width:100%">+ 기간 추가</button>
+      </div>
+    </div>
+    <div class="inq-section">
+      <div class="inq-section-title">담당자 정보</div>
+      <div class="mfr">
+        <div class="mfld"><label>담당자 성함</label><input type="text" id="inq-contact" placeholder="예: 홍길동"></div>
+        <div class="mfld"><label>이메일</label><input type="email" id="inq-email" placeholder="예: hong@brand.com"></div>
+      </div>
     </div>
     <div class="inq-section">
       <div class="inq-section-title">기타 사항</div>
@@ -788,7 +809,12 @@ async function saveThresholds(t){
 function startListeners(){
   // Campaigns
   onValue(ref(db,'campaigns'), snap=>{
-    CAMPS = snap.val() || [];
+    const remote = snap.val() || [];
+    // inqId 등 로컬에만 있는 필드를 보존하며 머지
+    CAMPS = remote.map(rc => {
+      const local = CAMPS.find(lc => lc.id === rc.id);
+      return local ? Object.assign({}, rc, {inqId: local.inqId || rc.inqId}) : rc;
+    });
     if(dbReady && curView==='list') renderAll();
     if(dbReady && curView==='monthly') renderMonthly();
     setSyncStatus(true);
@@ -1142,8 +1168,15 @@ function renderList(){
 //  OPEN REPORT
 // ════════════════════════════════════
 window.openReport=async function(id){
-  const camp=CAMPS.find(c=>c.id===id);
-  if(!camp){showToast('캠페인을 찾을 수 없습니다');return;}
+  let camp=CAMPS.find(c=>c.id===id);
+  if(!camp){
+    const rd=REPORTS[id];
+    if(rd&&rd.cfg){
+      camp={id,client:rd.cfg.client||'',campaign:rd.cfg.campaign||'',agency:rd.cfg.agency||'',start:rd.cfg.start||'',end:rd.cfg.end||'',products:rd.products||[]};
+    } else {
+      showToast('캠페인을 찾을 수 없습니다');return;
+    }
+  }
   curCampId=id; curTab=0;
   const raw=REPORTS[id];
   curRD=raw||{cfg:{client:camp.client,campaign:camp.campaign,agency:camp.agency,start:camp.start,end:camp.end},products:camp.products||[],data:{}};
@@ -1182,6 +1215,8 @@ function fillRSetup(){
   document.getElementById('rc-agency').value=c.agency||'';
   document.getElementById('rc-start').value=c.start||'';
   document.getElementById('rc-end').value=c.end||'';
+  const rcBudget=document.getElementById('rc-budget');
+  if(rcBudget) rcBudget.value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
   document.getElementById('rc-token').value=c.token||'';
   // 데이터가 있으면 읽기 전용 뷰, 없으면 편집 뷰
   if(c.client||c.campaign){
@@ -1197,6 +1232,8 @@ function rSetupViewMode(){
   document.getElementById('rv-agency').textContent=c.agency||'—';
   document.getElementById('rv-start').textContent=c.start||'—';
   document.getElementById('rv-end').textContent=c.end||'—';
+  const budgetEl=document.getElementById('rv-budget');
+  if(budgetEl) budgetEl.textContent=c.budget?Number(c.budget).toLocaleString('ko-KR')+'원':'—';
   document.getElementById('rv-token').textContent=c.token||'(미설정)';
   document.getElementById('r-setup-view').style.display='';
   document.getElementById('r-setup-edit').style.display='none';
@@ -1208,6 +1245,8 @@ window.rSetupEditMode=function(){
   document.getElementById('rc-agency').value=c.agency||'';
   document.getElementById('rc-start').value=c.start||'';
   document.getElementById('rc-end').value=c.end||'';
+  const rcBudget=document.getElementById('rc-budget');
+  if(rcBudget) rcBudget.value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
   document.getElementById('rc-token').value=c.token||'';
   document.getElementById('r-setup-view').style.display='none';
   document.getElementById('r-setup-edit').style.display='';
@@ -1217,6 +1256,11 @@ window.rSaveCfg=async function(){
   curRD.cfg.campaign=document.getElementById('rc-campaign').value;
   curRD.cfg.agency=document.getElementById('rc-agency').value;
   curRD.cfg.token=document.getElementById('rc-token').value.trim();
+  const rawBudget=(document.getElementById('rc-budget')?.value||'').replace(/,/g,'');
+  curRD.cfg.budget=rawBudget;
+  // CAMPS에도 budget 반영
+  const campIdx=CAMPS.findIndex(c=>c.id===curCampId);
+  if(campIdx>=0){ CAMPS[campIdx].budget=rawBudget; await saveCamps(CAMPS); }
   const statusEl=document.getElementById('save-status');
   if(statusEl) statusEl.textContent='저장 중...';
   await saveRD(curCampId,curRD);
@@ -1583,10 +1627,11 @@ function renderMonthly(){
   renderMonthChips('month-chips-2');
   const filtered=selMonth==='all'?CAMPS:CAMPS.filter(c=>c.start&&c.start.slice(0,7)===selMonth);
   document.getElementById('mo-title').textContent=selMonth==='all'?'전체 캠페인 성과':`${moLabel(selMonth)} 캠페인 성과`;
-  let imp=0,click=0; filtered.forEach(c=>{const m=campMetrics(c);imp+=m.imp;click+=m.click;});
+  let imp=0,click=0,totalBudget=0; filtered.forEach(c=>{const m=campMetrics(c);imp+=m.imp;click+=m.click;totalBudget+=Number(c.budget||(REPORTS[c.id]?.cfg?.budget)||0);});
   const ctr=imp>0?click/imp*100:0;
   document.getElementById('mo-kpi').innerHTML=`
     <div class="kpi gray"><div class="kl">캠페인</div><div class="kv" style="color:var(--t1)">${filtered.length}</div></div>
+    <div class="kpi" style="background:#ebfbee"><div class="kl" style="color:#2f9e44">총 예산</div><div class="kv" style="color:#2f9e44">${totalBudget>0?totalBudget.toLocaleString('ko-KR')+'원':'-'}</div></div>
     <div class="kpi blue"><div class="kl">총 노출수</div><div class="kv">${N(imp)}</div></div>
     <div class="kpi blue"><div class="kl">총 클릭수</div><div class="kv">${N(click)}</div></div>
     <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div></div>`;
@@ -1595,10 +1640,13 @@ function renderMonthly(){
   let tI=0,tC=0;
   tb.innerHTML=filtered.sort((a,b)=>(a.start||'').localeCompare(b.start||'')).map(c=>{
     const m=campMetrics(c);tI+=m.imp;tC+=m.click;
+    const campBudget = c.budget || (REPORTS[c.id]?.cfg?.budget) || '';
+    const budgetDisp = campBudget ? Number(campBudget).toLocaleString('ko-KR')+'원' : '-';
     return `<tr onclick="openReport('${c.id}')" style="cursor:pointer">
       <td><strong>${c.campaign||''}</strong></td><td>${c.client||''}</td>
       <td><span class="chip cb">${c.agency||''}</span></td>
       <td style="font-size:11px;color:var(--t2)">${c.start||''} ~ ${c.end||''}</td>
+      <td class="r" style="color:#2f9e44;font-weight:700">${budgetDisp}</td>
       <td class="r">${N(m.imp)}</td><td class="r">${N(m.click)}</td>
       <td class="r">${ctrNoThr(m.ctr)}</td>
     </tr>`;
@@ -1636,6 +1684,7 @@ window.openEditModal=function(id){
   document.getElementById('nm-campaign').value=c.campaign||'';
   document.getElementById('nm-start').value=c.start||'';
   document.getElementById('nm-end').value=c.end||'';
+  document.getElementById('nm-budget').value=c.budget?Number(c.budget).toLocaleString('ko-KR'):'';
   document.getElementById('nm-prods').value=(c.products||[]).join(', ');
   document.getElementById('new-ovl').classList.add('open');
 };
@@ -1647,16 +1696,17 @@ window.saveCampaign=async function(){
   const start=document.getElementById('nm-start').value;
   const end=document.getElementById('nm-end').value;
   const products=document.getElementById('nm-prods').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const budget=document.getElementById('nm-budget').value.replace(/,/g,'');
   if(!client||!agency||!campaign||!start||!end){showToast('필수 항목을 모두 입력하세요');return;}
   const eid=document.getElementById('nm-id').value;
   if(eid){
     const i=CAMPS.findIndex(c=>c.id===eid);
-    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign,start,end,products};
+    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign,start,end,products,budget};
       const rd=REPORTS[eid];if(rd){rd.cfg={client,agency,campaign,start,end};rd.products=products;await saveRD(eid,rd);}
     }
   } else {
     const id='c_'+Date.now();
-    CAMPS.push({id,client,agency,campaign,start,end,products,created:Date.now()});
+    CAMPS.push({id,client,agency,campaign,start,end,products,budget,created:Date.now()});
     const rd={cfg:{client,campaign,agency,start,end},products,data:{}};
     products.forEach(p=>rd.data[p]={});
     REPORTS[id]=rd; // 즉시 로컬 캐시에 반영 (상세페이지 진입 가능하게)
@@ -1771,28 +1821,33 @@ function renderCalendar(){
 
   // 이번달 범위 문자열
   const monthStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-  const today = new Date().toISOString().split('T')[0];
+  const _t = new Date();
+  const today = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
 
-  // 바텀시트 캠페인 수집
-  let camps = getBottomsheetCamps();
-
-  // 확정 여부 필터 (INQUIRIES와 연동: 캠페인 이름으로 매칭)
-  if(statusFilter !== 'all'){
-    camps = camps.filter(c=>{
-      const inq = INQUIRIES.find(q=>q.campId===c.id || (q.client===c.client && q.campaign===c.campaign));
-      const status = inq ? inq.status : 'pending';
-      return status === statusFilter;
+  // INQUIRIES에서 바텀시트 상품이 있는 문의만 수집 (bs_start/bs_end 기준)
+  let events = [];
+  INQUIRIES.filter(inq=>(inq.products||[]).some(p=>p.includes('바텀시트'))).forEach(inq=>{
+    const status = inq.status||'pending';
+    if(statusFilter!=='all' && status!==statusFilter) return;
+    const label = inq.client||(inq.agency||'문의');
+    // bs_periods 배열이 있으면 각각 이벤트로
+    const periods = Array.isArray(inq.bs_periods) && inq.bs_periods.length
+      ? inq.bs_periods
+      : (inq.bs_start||inq.start) ? [{start:inq.bs_start||inq.start, end:inq.bs_end||inq.end}] : [];
+    periods.forEach((p,pi)=>{
+      if(!p.start||!p.end) return;
+      events.push({id:inq.id+'_'+pi, label, start:p.start, end:p.end, status});
     });
-  }
-
-  // 날짜별 이벤트 맵 생성
-  // event = {campId, campaign, client, agency, start, end, status, botProduct}
-  const events = camps.map(c=>{
-    const inq = INQUIRIES.find(q=>q.campId===c.id);
-    const status = inq ? (inq.status||'pending') : 'pending';
-    const botProd = (c.products||[]).filter(p=>p.includes('바텀시트')).join(', ');
-    return {id:c.id, label: c.campaign||c.client||'', client:c.client, agency:c.agency, start:c.start, end:c.end, status, botProd};
-  }).filter(e=>e.start&&e.end);
+  });
+  // CAMPS에서 바텀시트 있고 INQUIRIES에 없는 것
+  getBottomsheetCamps().forEach(c=>{
+    const alreadyInInq = INQUIRIES.some(q=>q.campId===c.id);
+    if(alreadyInInq) return;
+    const status = 'pending';
+    if(statusFilter!=='all' && status!==statusFilter) return;
+    if(!c.start||!c.end) return;
+    events.push({id:c.id, label:c.campaign||c.client||'', start:c.start, end:c.end, status});
+  });
 
   // 달력 그리기
   const grid = document.getElementById('cal-days');
@@ -1801,7 +1856,10 @@ function renderCalendar(){
   let html2 = '';
   for(let i=0; i<cells.length; i++){
     const cell = cells[i];
-    const ds = cell.date.toISOString().split('T')[0];
+    const ds = (() => {
+      const d = cell.date;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    })();
     const dow = cell.date.getDay();
     const isToday = ds === today;
     const cls = [
@@ -1821,11 +1879,11 @@ function renderCalendar(){
       const isStart = ds === e.start;
       const isEnd   = ds === e.end;
       const isSolo  = isStart && isEnd;
-      const posCls  = isSolo ? 'ev-solo' : isStart ? 'ev-start' : isEnd ? 'ev-end' : 'ev-mid';
+      const isRowStart = isStart || dow === 0;
+      const posCls  = isSolo ? 'ev-solo' : (isStart||dow===0) ? 'ev-start' : isEnd ? 'ev-end' : 'ev-mid';
       const statusCls = e.status === 'confirmed' ? 'ev-confirmed' : 'ev-pending';
-      // 시작칸에만 텍스트
-      const label = (isStart||isSolo) ? (e.label.length>10?e.label.slice(0,10)+'…':e.label) : '　';
-      evHtml += `<span class="cal-event ${posCls} ${statusCls}" title="${e.label} (${e.start}~${e.end}) ${e.status==='confirmed'?'✅확정':'⏳미정'}">${label}</span>`;
+      const label = isRowStart ? e.label : '&nbsp;';
+      evHtml += `<span class="cal-event ${posCls} ${statusCls}" title="${e.label} (${e.bs_start||e.start}~${e.bs_end||e.end})">${label}</span>`;
     });
 
     html2 += `<div class="${cls}">${dayNumHtml}${evHtml}</div>`;
@@ -1838,6 +1896,72 @@ function renderCalendar(){
 // ════════════════════════════════════
 let inqEditStatus = 'pending';
 
+// 상품 목록 (THR 키 + 고정 목록 합산)
+const FIXED_PRODUCTS = ['바텀시트','메인 띠배너','기록면 띠배너','접수면 띠배너','플로팅배너'];
+let selectedProducts = [];
+
+function getProductList(){
+  const thrProds = Object.keys(THR);
+  const all = [...new Set([...FIXED_PRODUCTS,...thrProds])];
+  return all;
+}
+
+// 바텀시트 기간 행 추가
+let bsPeriods = []; // [{start:'', end:''}]
+
+window.addBsPeriod = function(start='', end=''){
+  bsPeriods.push({start, end});
+  renderBsPeriods();
+};
+
+window.removeBsPeriod = function(i){
+  bsPeriods.splice(i, 1);
+  renderBsPeriods();
+};
+
+function renderBsPeriods(){
+  const el = document.getElementById('inq-bs-periods'); if(!el) return;
+  el.innerHTML = bsPeriods.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center" data-bs-row="${i}">
+      <input type="date" class="bs-start-input" data-idx="${i}" value="${p.start}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <span style="font-size:11px;color:var(--t3)">~</span>
+      <input type="date" class="bs-end-input" data-idx="${i}" value="${p.end}"
+        style="font-family:var(--fn);font-size:12px;padding:6px 9px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);height:32px;flex:1">
+      <button type="button" onclick="removeBsPeriod(${i})"
+        style="font-family:var(--fn);font-size:12px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0 4px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+
+function getBsPeriodsFromDOM(){
+  const rows = document.querySelectorAll('#inq-bs-periods [data-bs-row]');
+  return Array.from(rows).map(row=>({
+    start: row.querySelector('.bs-start-input')?.value||'',
+    end:   row.querySelector('.bs-end-input')?.value||''
+  })).filter(p=>p.start||p.end);
+}
+
+function renderProdChips(){
+  const el = document.getElementById('inq-prod-chips'); if(!el) return;
+  const prods = getProductList();
+  el.innerHTML = prods.map(p=>{
+    const sel = selectedProducts.includes(p);
+    return `<button type="button" onclick="toggleProd('${p.replace(/'/g,"\'")}')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1.5px solid ${sel?'var(--blu)':'var(--bdr2)'};background:${sel?'var(--blu-bg)':'var(--surf)'};color:${sel?'var(--blu)':'var(--t2)'};cursor:pointer;transition:all .12s">${p}</button>`;
+  }).join('');
+  document.getElementById('inq-products').value = selectedProducts.join(', ');
+}
+
+window.toggleProd = function(p){
+  const i = selectedProducts.indexOf(p);
+  if(i>=0) selectedProducts.splice(i,1); else selectedProducts.push(p);
+  renderProdChips();
+};
+
+window.formatBudgetInput = function(el){
+  const raw = el.value.replace(/[^0-9]/g,'');
+  if(raw) el.value = Number(raw).toLocaleString('ko-KR');
+};
+
 window.setInqStatus = function(s){
   inqEditStatus = s;
   document.getElementById('inq-st-pending').className = s==='pending' ? 'active-pending' : 'inactive';
@@ -1848,23 +1972,35 @@ window.openInquiryModal = function(id){
   inqEditStatus = 'pending';
   document.getElementById('inq-id').value = '';
   document.getElementById('inq-modal-title').textContent = '새 광고 문의';
-  ['inq-client','inq-agency','inq-budget','inq-products','inq-note'].forEach(i=>{
+  ['inq-client','inq-agency','inq-budget','inq-note'].forEach(i=>{
     const el=document.getElementById(i); if(el) el.value='';
   });
   ['inq-start','inq-end'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  selectedProducts = [];
+  bsPeriods = [];
+  renderBsPeriods();
   window.setInqStatus('pending');
+  renderProdChips();
   if(id){
     const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
     document.getElementById('inq-id').value = id;
     document.getElementById('inq-modal-title').textContent = '문의 수정';
     document.getElementById('inq-client').value = inq.client||'';
     document.getElementById('inq-agency').value = inq.agency||'';
-    document.getElementById('inq-budget').value = inq.budget||'';
+    const rawBudget = (inq.budget||'').toString().replace(/[^0-9]/g,'');
+    document.getElementById('inq-budget').value = rawBudget ? Number(rawBudget).toLocaleString('ko-KR') : '';
     document.getElementById('inq-start').value = inq.start||'';
     document.getElementById('inq-end').value = inq.end||'';
-    document.getElementById('inq-products').value = (inq.products||[]).join(', ');
+    // 바텀시트 기간: 배열이면 그대로, 단일이면 변환
+    bsPeriods = Array.isArray(inq.bs_periods) ? [...inq.bs_periods] :
+      (inq.bs_start||inq.bs_end) ? [{start:inq.bs_start||'', end:inq.bs_end||''}] : [];
+    renderBsPeriods();
+    document.getElementById('inq-contact').value = inq.contact||'';
+    document.getElementById('inq-email').value = inq.email||'';
+    selectedProducts = [...(inq.products||[])];
     document.getElementById('inq-note').value = inq.note||'';
     window.setInqStatus(inq.status||'pending');
+    renderProdChips();
   }
   document.getElementById('inq-ovl').classList.add('open');
 };
@@ -1874,14 +2010,20 @@ window.saveInquiry = async function(){
   const client = document.getElementById('inq-client').value.trim();
   if(!client){ showToast('광고주를 입력하세요'); return; }
   const eid = document.getElementById('inq-id').value;
-  const products = document.getElementById('inq-products').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const products = selectedProducts;
+  const rawBudget = document.getElementById('inq-budget').value.replace(/[^0-9]/g,'');
   const obj = {
     id: eid || 'iq_'+Date.now(),
     client,
     agency: document.getElementById('inq-agency').value.trim(),
-    budget: document.getElementById('inq-budget').value.trim(),
+    budget: rawBudget,
     start:  document.getElementById('inq-start').value,
     end:    document.getElementById('inq-end').value,
+    bs_periods: getBsPeriodsFromDOM(),
+    bs_start: getBsPeriodsFromDOM()[0]?.start||'',
+    bs_end:   getBsPeriodsFromDOM()[0]?.end||'',
+    contact:  document.getElementById('inq-contact').value.trim(),
+    email:    document.getElementById('inq-email').value.trim(),
     products,
     note:   document.getElementById('inq-note').value.trim(),
     status: inqEditStatus,
@@ -1910,11 +2052,66 @@ window.deleteInquiry = async function(id){
 
 window.toggleInquiryStatus = async function(id){
   const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
-  inq.status = inq.status==='confirmed' ? 'pending' : 'confirmed';
+  const wasConfirmed = inq.status === 'confirmed';
+  inq.status = wasConfirmed ? 'pending' : 'confirmed';
   inq.updated = Date.now();
   await set(ref(db,'inquiries'), INQUIRIES);
+
+  if(inq.status === 'confirmed'){
+    // 이미 연결된 캠페인이 있으면 생성 안 함
+    const already = CAMPS.find(c=>c.inqId===id);
+    if(!already){
+      const campId = 'c_'+Date.now();
+      const products = inq.products||[];
+      const newCamp = {
+        id: campId,
+        client: inq.client||'',
+        agency: inq.agency||'',
+        campaign: inq.client||(inq.agency||'광고 캠페인'),
+        start: inq.start||'',
+        end: inq.end||'',
+        products,
+        inqId: id,
+        created: Date.now()
+      };
+      CAMPS.push(newCamp);
+      // 리포트 데이터도 같이 생성
+      const rd = {cfg:{client:newCamp.client,campaign:newCamp.campaign,agency:newCamp.agency,start:newCamp.start,end:newCamp.end},products,data:{}};
+      products.forEach(p=>rd.data[p]={});
+      REPORTS[campId] = rd;
+      await saveRD(campId, rd);
+      await saveCamps(CAMPS);
+      inq.campId = campId;
+      await set(ref(db,'inquiries'), INQUIRIES);
+      showToast('확정 — 캠페인이 생성되었습니다');
+      if(curView==='list') renderAll();
+    } else {
+      showToast('확정으로 변경 (캠페인 이미 존재)');
+    }
+  } else {
+    // 미정으로 되돌릴 때: 연결 캠페인 삭제 여부 확인
+    const linked = CAMPS.find(c=>c.inqId===id);
+    if(linked){
+      if(confirm(`미정으로 변경하면 연결된 캠페인 "${linked.campaign}"도 삭제됩니다. 계속하시겠습니까?`)){
+        CAMPS = CAMPS.filter(c=>c.inqId!==id);
+        delete REPORTS[linked.id];
+        await saveCamps(CAMPS);
+        await remove(ref(db,'reports/'+linked.id));
+        inq.campId = null;
+        await set(ref(db,'inquiries'), INQUIRIES);
+        showToast('미정으로 변경 — 캠페인이 삭제되었습니다');
+        if(curView==='list') renderAll();
+      } else {
+        // 취소 시 상태 되돌리기
+        inq.status = 'confirmed';
+        await set(ref(db,'inquiries'), INQUIRIES);
+      }
+    } else {
+      showToast('미정으로 변경');
+    }
+  }
   renderInquiryList();
-  showToast(inq.status==='confirmed'?'✅ 확정으로 변경':'⏳ 미정으로 변경');
+  if(curView==='calendar') renderCalendar();
 };
 
 function renderInquiryList(){
@@ -1923,32 +2120,39 @@ function renderInquiryList(){
   let list = [...INQUIRIES].sort((a,b)=>b.created-a.created);
   if(q) list = list.filter(i=>(i.client||'').toLowerCase().includes(q)||(i.agency||'').toLowerCase().includes(q));
   if(!list.length){
-    el.innerHTML=`<div class="empty">📋<br><br>광고 문의가 없습니다<br><span style="font-size:12px">+ 새 문의를 추가해보세요</span></div>`;
+    el.innerHTML=`<div class="empty">광고 문의가 없습니다<br><span style="font-size:12px">+ 새 문의를 추가해보세요</span></div>`;
     return;
   }
   el.innerHTML = list.map(inq=>{
     const statusLabel = inq.status==='confirmed' ? '확정' : '미정';
     const statusCls   = inq.status==='confirmed' ? 'confirmed' : 'pending';
     const cardCls     = inq.status==='confirmed' ? 'inq-card confirmed' : 'inq-card pending';
-    const budget      = inq.budget ? `💰 ${inq.budget}` : '';
-    const period      = (inq.start&&inq.end) ? `📅 ${inq.start} ~ ${inq.end}` : '';
-    const prods       = (inq.products||[]).length ? `📦 ${inq.products.join(', ')}` : '';
+    const rawBudget = inq.budget ? inq.budget.toString().replace(/[^0-9]/g,'') : '';
+    const budget = rawBudget ? Number(rawBudget).toLocaleString('ko-KR')+'원' : '';
+    const period      = (inq.start&&inq.end) ? `${inq.start} ~ ${inq.end}` : '';
+    const bsPeriodsArr = Array.isArray(inq.bs_periods) && inq.bs_periods.length
+      ? inq.bs_periods : (inq.bs_start ? [{start:inq.bs_start,end:inq.bs_end}] : []);
+    const bsPeriod = bsPeriodsArr.filter(p=>p.start).map(p=>`${p.start} ~ ${p.end}`).join(' · ');
+    const contactStr = [inq.contact, inq.email].filter(Boolean).join(' · ');
+    const prods       = (inq.products||[]).length ? `${inq.products.join(', ')}` : '';
     return `<div class="${cardCls}">
       <div class="inq-card-body">
         <div class="inq-title">
           ${inq.client||'(광고주 없음)'}
           ${inq.agency ? `<span style="font-size:12px;font-weight:500;color:var(--t2)">· ${inq.agency}</span>` : ''}
-          <span class="inq-status-badge ${statusCls}">${statusLabel}</span>
+          <span class="inq-status-badge ${statusCls}" style="font-size:10px;padding:2px 8px">${statusLabel}</span>
         </div>
+        ${contactStr ? `<div style="font-size:11px;color:var(--t3);margin-bottom:5px">${contactStr}</div>` : ''}
         <div class="inq-meta">
-          ${budget?`<span>${budget}</span>`:''}
+          ${budget?`<span style="color:#2f9e44;font-weight:700">${budget}</span>`:''}
           ${period?`<span>${period}</span>`:''}
           ${prods?`<span>${prods}</span>`:''}
+          ${bsPeriod?`<div style="margin-top:3px;font-size:11px;color:#868e96;width:100%">바텀시트 ${bsPeriod}</div>`:''}
         </div>
         ${inq.note ? `<div class="inq-note">${inq.note}</div>` : ''}
       </div>
       <div class="inq-actions">
-        <button class="btn btn-sm" onclick="toggleInquiryStatus('${inq.id}')" style="font-size:10px">${inq.status==='confirmed'?'↩ 미정으로':'✅ 확정'}</button>
+        <button class="btn btn-sm" onclick="toggleInquiryStatus('${inq.id}')" style="font-size:10px">${inq.status==='confirmed'?'미정으로':'확정'}</button>
         <button class="btn-icon" onclick="openInquiryModal('${inq.id}')">✏️</button>
         <button class="btn-icon del" onclick="deleteInquiry('${inq.id}')">🗑</button>
       </div>
