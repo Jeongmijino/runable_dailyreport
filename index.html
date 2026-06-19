@@ -69,7 +69,8 @@ html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--t1)
 .krow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;padding:0 28px 16px}
 .kpi{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
 .kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
-.kpi.blue::after{background:var(--blu)}.kpi.pink::after{background:var(--pnk)}.kpi.gray::after{background:var(--t3)}
+.kpi.blue::after{background:var(--blu)}
+.kpi.grn::after{background:#2f9e44}.kpi.pink::after{background:var(--pnk)}.kpi.gray::after{background:var(--t3)}
 .kl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
 .kv{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1}
 .ks{font-size:10px;color:var(--t3);margin-top:4px}
@@ -81,7 +82,7 @@ html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--t1)
 .ccard:hover{background:#fafbff}
 .ccard.sel{background:var(--blu-bg)}
 .cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.cdot.on{background:var(--grn)}.cdot.off{background:var(--t3)}
+.cdot.on{background:var(--grn)}.cdot.upcoming{background:#f08c00}.cdot.off{background:var(--t3)}
 .cbody{flex:1;min-width:0}
 .cname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 .cmeta{font-size:10px;color:var(--t3);display:flex;gap:10px;flex-wrap:wrap}
@@ -349,12 +350,12 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   <button class="sbi on" id="sb-list" onclick="gotoList()"><span>▤</span> 전체 캠페인 <span class="ct" id="ct-all">0</span></button>
   <button class="sbi" id="sb-mo" onclick="gotoMonthly()"><span>◫</span> 월별 성과</button>
   <div class="sb-div"></div>
-  <div class="sb-sec">랩사</div>
-  <div id="sb-ags"></div>
-  <div class="sb-div"></div>
-  <div class="sb-sec">도구</div>
+  <div class="sb-sec">문의</div>
   <button class="sbi" id="sb-cal" onclick="gotoCalendar()">바텀시트 달력</button>
   <button class="sbi" id="sb-inq" onclick="gotoInquiry()">광고 문의</button>
+  <div class="sb-div"></div>
+  <div class="sb-sec">랩사</div>
+  <div id="sb-ags"></div>
   <div class="sb-div"></div>
   <button class="sbi" id="sb-stg" onclick="gotoSettings()"><span>⚙</span> 설정</button>
   <div class="sb-bottom">
@@ -480,7 +481,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div><div class="mvt" id="mo-title">캠페인 성과</div>
         <div class="mvcard"><table><thead><tr>
           <th>캠페인</th><th>광고주</th><th>랩사</th><th>기간</th>
-          <th class="r" style="color:#2f9e44">예산</th><th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th>
+          <th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th><th class="r" style="color:#2f9e44">예산</th>
         </tr></thead><tbody id="mo-tbody"></tbody></table></div>
       </div>
       <div><div class="mvt">랩사별 합산</div>
@@ -1049,7 +1050,16 @@ function gotoMonthly(){ showView('monthly'); renderSidebar(); renderMonthChips('
 function gotoSettings(){ showView('settings'); renderSettings(); renderTokenList(); }
 window.gotoCalendar=function(){ showView('calendar'); renderCalendar(); };
 window.gotoInquiry=function(){ showView('inquiry'); renderInquiryList(); };
-window.gotoList=gotoList; window.gotoMonthly=gotoMonthly; window.gotoSettings=gotoSettings;
+window.gotoList=gotoList; window.gotoMonthly=function(){
+  // 현재 월을 기본값으로 설정
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  // 해당 월에 캠페인이 있으면 그 월로, 없으면 전체
+  const hasThisMonth = CAMPS.some(c=>c.start&&c.start.slice(0,7)===thisMonth);
+  selMonth = hasThisMonth ? thisMonth : 'all';
+  showView('monthly');
+  renderMonthly();
+}; window.gotoSettings=gotoSettings;
 
 // ════════════════════════════════════
 //  SIDEBAR
@@ -1127,7 +1137,14 @@ function campMetrics(c){
   });
   return{imp,click,ctr:imp>0?click/imp*100:0};
 }
-function isActive(c){ const t=new Date().toISOString().split('T')[0]; return c.start<=t&&t<=c.end; }
+function isActive(c){
+  const d=new Date(), t=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return c.start<=t&&t<=c.end;
+}
+function isUpcoming(c){
+  const d=new Date(), t=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return c.start>t;
+}
 
 function renderListKpi(){
   const list=getFiltered();
@@ -1144,9 +1161,9 @@ function renderList(){
   const el=document.getElementById('clist');
   if(!list.length){el.innerHTML='<div class="empty">📋<br><br>캠페인이 없습니다<br><span style="font-size:12px">새 캠페인을 추가해보세요</span></div>';return;}
   el.innerHTML=list.map(c=>{
-    const m=campMetrics(c),act=isActive(c);
+    const m=campMetrics(c),act=isActive(c),upcoming=isUpcoming(c);
     return `<div class="ccard${curCampId===c.id?' sel':''}" onclick="openReport('${c.id}')">
-      <div class="cdot ${act?'on':'off'}"></div>
+      <div class="cdot ${act?'on':upcoming?'upcoming':'off'}"></div>
       <div class="cbody">
         <div class="cname">${c.campaign||'(이름 없음)'}</div>
         <div class="cmeta"><span class="chip cb">${c.agency||''}</span><span>${c.client||''}</span><span>${c.start||''} ~ ${c.end||''}</span><span>상품 ${(c.products||[]).length}개</span></div>
@@ -1252,24 +1269,24 @@ window.rSetupEditMode=function(){
   document.getElementById('r-setup-edit').style.display='';
 };
 window.rSaveCfg=async function(){
+  const statusEl=document.getElementById('save-status');
+  if(statusEl){ statusEl.textContent='저장 중...'; statusEl.style.color='var(--t3)'; }
   curRD.cfg.client=document.getElementById('rc-client').value;
   curRD.cfg.campaign=document.getElementById('rc-campaign').value;
   curRD.cfg.agency=document.getElementById('rc-agency').value;
   curRD.cfg.token=document.getElementById('rc-token').value.trim();
   const rawBudget=(document.getElementById('rc-budget')?.value||'').replace(/,/g,'');
   curRD.cfg.budget=rawBudget;
-  // CAMPS에도 budget 반영
-  const campIdx=CAMPS.findIndex(c=>c.id===curCampId);
-  if(campIdx>=0){ CAMPS[campIdx].budget=rawBudget; await saveCamps(CAMPS); }
-  const statusEl=document.getElementById('save-status');
-  if(statusEl) statusEl.textContent='저장 중...';
-  await saveRD(curCampId,curRD);
-  await syncCamp();
-  renderRHeader(); renderSidebar();
-  if(statusEl){
-    statusEl.textContent='저장되었습니다';
-    statusEl.style.color='var(--grn)';
-    setTimeout(()=>{ statusEl.textContent=''; rSetupViewMode(); },800);
+  try{
+    // syncCamp 내에서 budget 포함해서 저장
+    const i=CAMPS.findIndex(c=>c.id===curCampId);
+    if(i>=0){ CAMPS[i]={...CAMPS[i],client:curRD.cfg.client,agency:curRD.cfg.agency,campaign:curRD.cfg.campaign,start:curRD.cfg.start,end:curRD.cfg.end,products:curRD.products,budget:rawBudget}; }
+    await Promise.all([saveRD(curCampId,curRD), set(ref(db,'campaigns'),CAMPS)]);
+    renderRHeader(); renderSidebar();
+    if(statusEl){ statusEl.textContent='저장되었습니다'; statusEl.style.color='var(--grn)'; }
+    setTimeout(()=>{ if(statusEl) statusEl.textContent=''; rSetupViewMode(); },800);
+  } catch(e){
+    if(statusEl){ statusEl.textContent='저장 실패 — 다시 시도해주세요'; statusEl.style.color='red'; }
   }
 };
 window.rDateChange=function(){
@@ -1631,28 +1648,29 @@ function renderMonthly(){
   const ctr=imp>0?click/imp*100:0;
   document.getElementById('mo-kpi').innerHTML=`
     <div class="kpi gray"><div class="kl">캠페인</div><div class="kv" style="color:var(--t1)">${filtered.length}</div></div>
-    <div class="kpi" style="background:#ebfbee"><div class="kl" style="color:#2f9e44">총 예산</div><div class="kv" style="color:#2f9e44">${totalBudget>0?totalBudget.toLocaleString('ko-KR')+'원':'-'}</div></div>
     <div class="kpi blue"><div class="kl">총 노출수</div><div class="kv">${N(imp)}</div></div>
     <div class="kpi blue"><div class="kl">총 클릭수</div><div class="kv">${N(click)}</div></div>
-    <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div></div>`;
+    <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div></div>
+    <div class="kpi grn"><div class="kl">총 예산</div><div class="kv" style="color:#2f9e44">${totalBudget>0?totalBudget.toLocaleString('ko-KR')+'원':'-'}</div></div>`;
   const tb=document.getElementById('mo-tbody');
   if(!filtered.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';return;}
-  let tI=0,tC=0;
+  let tI=0,tC=0,tBudget=0;
   tb.innerHTML=filtered.sort((a,b)=>(a.start||'').localeCompare(b.start||'')).map(c=>{
     const m=campMetrics(c);tI+=m.imp;tC+=m.click;
+    tBudget+=Number(c.budget||(REPORTS[c.id]?.cfg?.budget)||0);
     const campBudget = c.budget || (REPORTS[c.id]?.cfg?.budget) || '';
     const budgetDisp = campBudget ? Number(campBudget).toLocaleString('ko-KR')+'원' : '-';
     return `<tr onclick="openReport('${c.id}')" style="cursor:pointer">
       <td><strong>${c.campaign||''}</strong></td><td>${c.client||''}</td>
       <td><span class="chip cb">${c.agency||''}</span></td>
       <td style="font-size:11px;color:var(--t2)">${c.start||''} ~ ${c.end||''}</td>
-      <td class="r" style="color:#2f9e44;font-weight:700">${budgetDisp}</td>
       <td class="r">${N(m.imp)}</td><td class="r">${N(m.click)}</td>
       <td class="r">${ctrNoThr(m.ctr)}</td>
+      <td class="r" style="color:#2f9e44;font-weight:700">${budgetDisp}</td>
     </tr>`;
   }).join('');
   const tc=tI>0?tC/tI*100:0;
-  tb.innerHTML+=`<tr class="sumr"><td colspan="4">합계</td><td class="r">${N(tI)}</td><td class="r">${N(tC)}</td><td class="r">${tc.toFixed(2)}%</td></tr>`;
+  tb.innerHTML+=`<tr class="sumr"><td colspan="4">합계</td><td class="r">${N(tI)}</td><td class="r">${N(tC)}</td><td class="r">${tc.toFixed(2)}%</td><td class="r" style="color:#6ee7b7">${tBudget>0?tBudget.toLocaleString("ko-KR")+"원":""}</td></tr>`;
   const agMap={};
   filtered.forEach(c=>{const ag=c.agency||'(미설정)';if(!agMap[ag])agMap[ag]={count:0,imp:0,click:0};const m=campMetrics(c);agMap[ag].count++;agMap[ag].imp+=m.imp;agMap[ag].click+=m.click;});
   const at=document.getElementById('ag-tbody');
@@ -1826,7 +1844,11 @@ function renderCalendar(){
 
   // INQUIRIES에서 바텀시트 상품이 있는 문의만 수집 (bs_start/bs_end 기준)
   let events = [];
+  // 중복 제거: id 기준으로 유니크하게
+  const seenInqIds = new Set();
   INQUIRIES.filter(inq=>(inq.products||[]).some(p=>p.includes('바텀시트'))).forEach(inq=>{
+    if(seenInqIds.has(inq.id)) return;
+    seenInqIds.add(inq.id);
     const status = inq.status||'pending';
     if(statusFilter!=='all' && status!==statusFilter) return;
     const label = inq.client||(inq.agency||'문의');
@@ -2076,14 +2098,18 @@ window.toggleInquiryStatus = async function(id){
       };
       CAMPS.push(newCamp);
       // 리포트 데이터도 같이 생성
-      const rd = {cfg:{client:newCamp.client,campaign:newCamp.campaign,agency:newCamp.agency,start:newCamp.start,end:newCamp.end},products,data:{}};
+      const rd = {cfg:{client:newCamp.client,campaign:newCamp.campaign,agency:newCamp.agency,start:newCamp.start,end:newCamp.end,budget:inq.budget||''},products,data:{}};
       products.forEach(p=>rd.data[p]={});
       REPORTS[campId] = rd;
-      await saveRD(campId, rd);
-      await saveCamps(CAMPS);
       inq.campId = campId;
-      await set(ref(db,'inquiries'), INQUIRIES);
-      showToast('확정 — 캠페인이 생성되었습니다');
+      // 한번에 저장 (순서 보장)
+      await Promise.all([
+        saveRD(campId, rd),
+        set(ref(db,'campaigns'), CAMPS),
+        set(ref(db,'inquiries'), INQUIRIES)
+      ]);
+      showToast('✅ 확정 — 캠페인이 생성되었습니다');
+      renderAll();
       if(curView==='list') renderAll();
     } else {
       showToast('확정으로 변경 (캠페인 이미 존재)');
