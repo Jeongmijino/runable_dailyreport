@@ -1322,7 +1322,13 @@ window.openReport=async function(id){
   }
   curCampId=id; curTab=0;
   const raw=REPORTS[id];
-  curRD=raw||{cfg:{client:camp.client,campaign:camp.campaign,agency:camp.agency,start:camp.start,end:camp.end},products:camp.products||[],data:{}};
+  curRD=raw||{cfg:{client:camp.client,campaign:camp.campaign||camp.client,agency:camp.agency,start:camp.start,end:camp.end,budget:camp.budget||'',contact:camp.contact||'',email:camp.email||'',bs_periods:camp.bs_periods||[]},products:camp.products||[],data:{}};
+  // REPORTS에 없으면 즉시 생성
+  if(!raw){
+    (curRD.products||[]).forEach(p=>{if(!curRD.data[p])curRD.data[p]={};});
+    REPORTS[id]=curRD;
+    saveRD(id,curRD);
+  }
   (curRD.products||[]).forEach(p=>{if(!curRD.data[p])curRD.data[p]={};});
   showView('report');
   if(isAgency){
@@ -1870,17 +1876,18 @@ window.saveCampaign=async function(){
   const contact=(document.getElementById('nm-contact')?.value||'').trim();
   const email=(document.getElementById('nm-email')?.value||'').trim();
   const nmBsArr=getNmBsPeriodsFromDOM();
-  if(!client||!agency||!campaign||!start||!end){showToast('필수 항목을 모두 입력하세요');return;}
+  if(!client||!agency||!start||!end){showToast('필수 항목을 모두 입력하세요');return;}
+  const finalCampaign = campaign || client; // 캠페인명 없으면 광고주명으로
   const eid=document.getElementById('nm-id').value;
   if(eid){
     const i=CAMPS.findIndex(c=>c.id===eid);
-    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign,start,end,products,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''};
-      const rd=REPORTS[eid];if(rd){rd.cfg={...rd.cfg,client,agency,campaign,start,end,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''};rd.products=products;await saveRD(eid,rd);}
+    if(i>=0){CAMPS[i]={...CAMPS[i],client,agency,campaign:finalCampaign,start,end,products,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''};
+      const rd=REPORTS[eid];if(rd){rd.cfg={...rd.cfg,client,agency,campaign:finalCampaign,start,end,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''};rd.products=products;await saveRD(eid,rd);}
     }
   } else {
     const id='c_'+Date.now();
-    CAMPS.push({id,client,agency,campaign,start,end,products,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||'',created:Date.now()});
-    const rd={cfg:{client,campaign,agency,start,end,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''},products,data:{}};
+    CAMPS.push({id,client,agency,campaign:finalCampaign,start,end,products,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||'',created:Date.now()});
+    const rd={cfg:{client,campaign:finalCampaign,agency,start,end,budget,contact,email,bs_periods:nmBsArr,bs_start:nmBsArr[0]?.start||'',bs_end:nmBsArr[0]?.end||''},products,data:{}};
     products.forEach(p=>rd.data[p]={});
     REPORTS[id]=rd; // 즉시 로컬 캐시에 반영 (상세페이지 진입 가능하게)
     await saveRD(id,rd);
@@ -2075,14 +2082,10 @@ function renderCalendar(){
 let inqEditStatus = 'pending';
 
 // 상품 목록 (THR 키 + 고정 목록 합산)
-const FIXED_PRODUCTS = ['바텀시트','메인 띠배너','기록면 띠배너','접수면 띠배너','플로팅배너'];
+const FIXED_PRODUCTS = ['바텀시트 팝업','메인 롤링배너','메인 띠배너','일반 띠배너','이번주 팁','퀵메뉴','인스타그램 광고','푸시 광고','LMS 광고','리워드 획득 CPC 광고','샘플링','대회 티켓팅(접수) 대행'];
 let selectedProducts = [];
 
-function getProductList(){
-  const thrProds = Object.keys(THR);
-  const all = [...new Set([...FIXED_PRODUCTS,...thrProds])];
-  return all;
-}
+function getProductList(){ return FIXED_PRODUCTS; }
 
 // 바텀시트 기간 행 추가
 let bsPeriods = []; // [{start:'', end:''}]
@@ -2133,11 +2136,8 @@ function renderNmProdChips(){
   const el = document.getElementById('nm-prod-chips'); if(!el) return;
   el.innerHTML = ALL_PRODUCTS.map(p=>{
     const sel = nmSelectedProds.includes(p);
-    return `<button type="button" onclick="toggleNmProd('${p.replace(/'/g,"\\'")}'"
-      style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
-      border:1.5px solid ${sel?'var(--blu)':'var(--bdr2)'};
-      background:${sel?'var(--blu-bg)':'var(--surf)'};
-      color:${sel?'var(--blu)':'var(--t2)'};cursor:pointer;transition:all .12s">${p}</button>`;
+    const s = sel?'border:1.5px solid var(--blu);background:var(--blu-bg);color:var(--blu)':'border:1.5px solid var(--bdr2);background:var(--surf);color:var(--t2)';
+    return '<button type="button" onclick="toggleNmProd(\'' + p.replace(/'/g,"\'") + '\')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;transition:all .12s;' + s + '">' + p + '</button>';
   }).join('');
   const hidden = document.getElementById('nm-prods');
   if(hidden) hidden.value = nmSelectedProds.join(', ');
@@ -2206,9 +2206,10 @@ function getBsPeriodsFromDOM(){
 
 function renderProdChips(){
   const el = document.getElementById('inq-prod-chips'); if(!el) return;
-  el.innerHTML = ALL_PRODUCTS.map(p=>{
+  el.innerHTML = FIXED_PRODUCTS.map(p=>{
     const sel = selectedProducts.includes(p);
-    return `<button type="button" onclick="toggleProd('${p.replace(/'/g,"\'")}')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1.5px solid ${sel?'var(--blu)':'var(--bdr2)'};background:${sel?'var(--blu-bg)':'var(--surf)'};color:${sel?'var(--blu)':'var(--t2)'};cursor:pointer;transition:all .12s">${p}</button>`;
+    const s = sel?'border:1.5px solid var(--blu);background:var(--blu-bg);color:var(--blu)':'border:1.5px solid var(--bdr2);background:var(--surf);color:var(--t2)';
+    return '<button type="button" onclick="toggleProd(\'' + p.replace(/'/g,"\'") + '\')" style="font-family:var(--fn);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;transition:all .12s;' + s + '">' + p + '</button>';
   }).join('');
   document.getElementById('inq-products').value = selectedProducts.join(', ');
 }
@@ -2329,7 +2330,7 @@ window.toggleInquiryStatus = async function(id){
         id: campId,
         client: inq.client||'',
         agency: inq.agency||'',
-        campaign: inq.client||(inq.agency||'광고 캠페인'),
+        campaign: [inq.client, inq.agency].filter(Boolean).join(' · ')||'광고 캠페인',
         start: inq.start||'',
         end: inq.end||'',
         products,
