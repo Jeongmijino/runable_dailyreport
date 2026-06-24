@@ -541,24 +541,52 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="cal-legend">
         <div class="cal-legend-item"><div class="cal-legend-dot confirmed"></div> 광고 확정</div>
         <div class="cal-legend-item"><div class="cal-legend-dot pending"></div> 광고 미정</div>
-        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f3d9fa;border:1px solid #cc5de8"></div> 스폰서십 확정</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f3d9fa;border:1px solid #cc5de8"></div> 스폰서십</div>
       </div>
     </div>
   </div>
+  <div id="sponsor-list-wrap" style="display:none"><div id="sponsor-list"></div></div>
 
   <!-- INQUIRY -->
   <div id="v-inquiry" style="display:none">
     <div class="ph">
       <div class="ph-l"><div class="ey">Inquiry Management</div><div class="pt">광고 문의</div></div>
       <div class="ph-r">
-        <div class="srch">
-          <span class="srch-ico">🔍</span>
-          <input id="inq-srch" placeholder="광고주 · 대행사 검색" oninput="renderInquiryList()">
-        </div>
         <button class="btn btn-p" onclick="openInquiryModal()">+ 새 문의</button>
       </div>
     </div>
-    <div class="inq-list" id="inq-list" style="max-height:calc(100vh - 160px);overflow-y:auto;padding-bottom:40px"></div>
+    <div style="display:grid;grid-template-columns:300px 1fr;gap:0;height:calc(100vh - 108px);overflow:hidden">
+      <!-- 좌: 달력 그리드 -->
+      <div style="border-right:1px solid var(--bdr);overflow-y:auto;background:var(--surf)">
+        <div style="padding:16px 20px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px">
+          <button onclick="inqCalPrev()" style="font-family:var(--fn);font-size:15px;font-weight:700;background:none;border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;color:var(--t2);padding:0 10px;height:28px;line-height:1">‹</button>
+          <div id="inq-cal-label" style="font-size:14px;font-weight:800;color:var(--t1);flex:1;text-align:center"></div>
+          <button onclick="inqCalNext()" style="font-family:var(--fn);font-size:15px;font-weight:700;background:none;border:1px solid var(--bdr2);border-radius:var(--r);cursor:pointer;color:var(--t2);padding:0 10px;height:28px;line-height:1">›</button>
+        </div>
+        <!-- 요일 헤더 -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr)">
+          <div style="text-align:center;font-size:9px;font-weight:800;color:#e03131;padding:8px 0">일</div>
+          <div style="text-align:center;font-size:9px;font-weight:800;color:var(--t3);padding:8px 0">월</div>
+          <div style="text-align:center;font-size:9px;font-weight:800;color:var(--t3);padding:8px 0">화</div>
+          <div style="text-align:center;font-size:9px;font-weight:800;color:var(--t3);padding:8px 0">수</div>
+          <div style="text-align:center;font-size:9px;font-weight:800;color:var(--t3);padding:8px 0">목</div>
+          <div style="text-align:center;font-size:9px;font-weight:800;color:var(--t3);padding:8px 0">금</div>
+          <div style="text-align:center;font-size:9px;font-weight:800;color:var(--blu);padding:8px 0">토</div>
+        </div>
+        <!-- 날짜 + 주별 배너 그리드 -->
+        <div id="inq-cal-grid"></div>
+      </div>
+      <!-- 우: 선택된 주의 문의 리스트 -->
+      <div style="overflow-y:auto;background:var(--bg)">
+        <div id="inq-week-header" style="padding:16px 24px 12px;border-bottom:1px solid var(--bdr);background:var(--surf);position:sticky;top:0;z-index:1">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div id="inq-week-title" style="font-size:13px;font-weight:800;color:var(--t1)">주를 선택하세요</div>
+            <div id="inq-week-stats" style="display:flex;gap:6px"></div>
+          </div>
+        </div>
+        <div class="inq-list" id="inq-list" style="padding:16px 24px 40px"></div>
+      </div>
+    </div>
   </div>
 
   <!-- CONTACTS -->
@@ -954,13 +982,16 @@ function startListeners(){
 
   // Sponsors
   onValue(ref(db,'sponsors'), snap=>{
-    SPONSORS = snap.val() || [];
-    if(dbReady && curView==='calendar') renderCalendar();
+    const raw = snap.val();
+    // Firebase는 배열을 객체로 저장하므로 Object.values로 변환
+    SPONSORS = raw ? (Array.isArray(raw) ? raw : Object.values(raw)).filter(Boolean) : [];
+    if(dbReady && curView==='calendar'){ renderCalendar(); renderSponsorList(); }
   }, ()=>{});
 
   // Inquiries
   onValue(ref(db,'inquiries'), snap=>{
-    INQUIRIES = snap.val() || [];
+    const rawInq = snap.val();
+    INQUIRIES = rawInq ? (Array.isArray(rawInq) ? rawInq : Object.values(rawInq)).filter(Boolean) : [];
     if(dbReady && curView==='inquiry') renderInquiryList();
     if(dbReady && curView==='calendar') renderCalendar();
   }, ()=>{});
@@ -1264,13 +1295,14 @@ window.openSponsorModal = function(id){
   document.getElementById('sp-id').value='';
   document.getElementById('sponsor-modal-title').textContent='스폰서십 바텀시트 추가';
   ['sp-brand','sp-dept','sp-budget','sp-note'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
-  document.getElementById('sp-del-btn').style.display='none';
+  document.getElementById('sp-del-btn').style.display='none'; // 새 추가 시 숨김
   spStatus='confirmed';
   renderSpPeriods();
   if(id){
     const sp = SPONSORS.find(s=>s.id===id); if(!sp) return;
     document.getElementById('sp-id').value = id;
     document.getElementById('sponsor-modal-title').textContent='스폰서십 수정';
+    document.getElementById('sp-del-btn').style.display='';
     document.getElementById('sp-brand').value = sp.brand||'';
     document.getElementById('sp-dept').value = sp.dept||'';
     const rawBudget=(sp.budget||'').toString().replace(/[^0-9]/g,'');
@@ -1307,6 +1339,16 @@ window.saveSponsor = async function(){
   closeSponsorModal();
   showToast(eid?'수정되었습니다':'스폰서십이 추가되었습니다');
   renderCalendar();
+  renderSponsorList();
+};
+
+window.quickDeleteSponsor = async function(id){
+  if(!id || !confirm('이 스폰서십을 삭제하시겠습니까?')) return;
+  SPONSORS = SPONSORS.filter(s=>s.id!==id);
+  await set(ref(db,'sponsors'), SPONSORS);
+  showToast('삭제되었습니다');
+  renderCalendar();
+  renderSponsorList();
 };
 
 window.deleteSponsor = async function(){
@@ -1317,6 +1359,7 @@ window.deleteSponsor = async function(){
   closeSponsorModal();
   showToast('삭제되었습니다');
   renderCalendar();
+  renderSponsorList();
 };
 
 // 달력에서 스폰서십 클릭 → 수정 모달
@@ -1325,8 +1368,171 @@ window.openSponsorFromCal = function(spBaseId){
   if(sp) openSponsorModal(sp.id);
 };
 
+function renderSponsorList(){
+  const el = document.getElementById('sponsor-list'); if(!el) return;
+  if(!SPONSORS.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:12px 0">등록된 스폰서십이 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = [...SPONSORS].sort((a,b)=>(b.created||0)-(a.created||0)).map(sp=>{
+    const budget = sp.budget ? Number(sp.budget).toLocaleString('ko-KR')+'원' : '';
+    const periods = (sp.periods||[]).map(p=>p.start+'~'+p.end).join(', ');
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:6px">'
+      +'<div style="width:8px;height:8px;border-radius:50%;background:#9c36b5;margin-top:4px;flex-shrink:0"></div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--t1)">'+(sp.brand||'(브랜드 없음)')+(sp.dept?'<span style="font-size:10px;font-weight:500;color:var(--t3);margin-left:6px">'+sp.dept+'</span>':'')+'</div>'
+      +(periods?'<div style="font-size:10px;color:#9c36b5;margin-top:2px">'+periods+'</div>':'')
+      +(budget?'<div style="font-size:10px;color:var(--t2);margin-top:2px">'+budget+'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;gap:5px;flex-shrink:0">'      +'<button data-spid="'+sp.id+'" onclick="openSponsorModal(this.dataset.spid)" style="font-family:var(--fn);font-size:10px;font-weight:600;padding:3px 10px;border-radius:var(--r);border:1px solid var(--bdr2);background:var(--surf);color:var(--t2);cursor:pointer;white-space:nowrap">✏️ 수정</button>'      +'<button data-spid="'+sp.id+'" onclick="quickDeleteSponsor(this.dataset.spid)" style="font-family:var(--fn);font-size:10px;font-weight:600;padding:3px 10px;border-radius:var(--r);border:1px solid #ffc9c9;background:#fff5f5;color:#e03131;cursor:pointer;white-space:nowrap">삭제</button>'      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
 window.gotoCalendar=function(){ showView('calendar'); renderCalendar(); };
-window.gotoInquiry=function(){ showView('inquiry'); renderInquiryList(); };
+window.gotoInquiry=function(){
+  showView('inquiry');
+  inqCalYear=new Date().getFullYear();
+  inqCalMonth=new Date().getMonth();
+  inqSelWeek=null;
+  renderInquiryCalendar();
+  renderInquiryList();
+};
+
+let inqCalYear=new Date().getFullYear();
+let inqCalMonth=new Date().getMonth();
+let inqSelWeek=null; // {mon:'2026-07-14', sun:'2026-07-20'}
+
+window.inqCalPrev=function(){
+  inqCalMonth--; if(inqCalMonth<0){inqCalMonth=11;inqCalYear--;}
+  renderInquiryCalendar();
+};
+window.inqCalNext=function(){
+  inqCalMonth++; if(inqCalMonth>11){inqCalMonth=0;inqCalYear++;}
+  renderInquiryCalendar();
+};
+
+function getWeekRange(ts){
+  const d=new Date(ts);
+  const day=d.getDay();
+  const diff=day===0?-6:1-day;
+  const mon=new Date(d); mon.setDate(d.getDate()+diff); mon.setHours(0,0,0,0);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+  const fmt=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+  return {mon:fmt(mon),sun:fmt(sun),monTs:mon.getTime(),sunTs:sun.getTime()};
+}
+
+function renderInquiryCalendar(){
+  const lbl=document.getElementById('inq-cal-label');
+  if(lbl) lbl.textContent=`${inqCalYear}년 ${inqCalMonth+1}월`;
+
+  const grid=document.getElementById('inq-cal-grid'); if(!grid) return;
+  const firstDay=new Date(inqCalYear,inqCalMonth,1);
+  const lastDay=new Date(inqCalYear,inqCalMonth+1,0);
+  const startDow=firstDay.getDay();
+  const totalDays=lastDay.getDate();
+  const _t=new Date();
+  const todayStr=`${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+
+  // 42칸 채우기
+  const cells=[];
+  for(let i=0;i<startDow;i++){
+    const d=new Date(inqCalYear,inqCalMonth,-startDow+1+i);
+    cells.push({date:d,other:true});
+  }
+  for(let d=1;d<=totalDays;d++) cells.push({date:new Date(inqCalYear,inqCalMonth,d),other:false});
+  while(cells.length<42){
+    const d=new Date(inqCalYear,inqCalMonth+1,cells.length-startDow-totalDays+1);
+    cells.push({date:d,other:true});
+  }
+
+  // 날짜 → ds 변환 헬퍼
+  const ds=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  // 날짜별 문의 수 집계
+  const toLocalDs=ts=>{
+    const d=new Date(ts||0);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+  const dayCounts={};
+  INQUIRIES.forEach(inq=>{
+    const d=toLocalDs(inq.created);
+    if(!dayCounts[d]) dayCounts[d]={confirmed:0,pending:0};
+    if(inq.status==='confirmed') dayCounts[d].confirmed++;
+    else dayCounts[d].pending++;
+  });
+
+  // 주 시작(일)~끝(토) 계산 - 달력이 일요일 시작이므로 일~토 기준
+  const getWeekStartEnd=d=>{
+    const day=d.getDay(); // 0=일
+    const sun=new Date(d); sun.setDate(d.getDate()-day);     // 해당 주 일요일
+    const sat=new Date(sun); sat.setDate(sun.getDate()+6);  // 해당 주 토요일
+    return {mon:ds(sun), sun:ds(sat)}; // mon 키 재사용 (호환성)
+  };
+
+  // 주별로 묶기 (6주 행)
+  const rows=[];
+  for(let r=0;r<6;r++) rows.push(cells.slice(r*7,(r+1)*7));
+
+  // 주별 문의 집계
+  const weekStats=rows.map(row=>{
+    let confirmed=0,pending=0;
+    row.forEach(cell=>{
+      const d=ds(cell.date);
+      if(dayCounts[d]){confirmed+=dayCounts[d].confirmed;pending+=dayCounts[d].pending;}
+    });
+    const {mon,sun}=getWeekStartEnd(row[0].date);
+    const isSelected=inqSelWeek&&inqSelWeek.mon===mon;
+    return {row,mon,sun,confirmed,pending,total:confirmed+pending,isSelected};
+  });
+
+  // 렌더링: 주 행 = 날짜 7칸 + 주 배너
+  grid.innerHTML=weekStats.map(wk=>{
+    const dayCells=wk.row.map(cell=>{
+      const d=ds(cell.date);
+      const dow=cell.date.getDay();
+      const isToday=d===todayStr;
+      const numColor=cell.other?'#ccc':dow===0?'#e03131':dow===6?'var(--blu)':'var(--t1)';
+      return '<div style="text-align:center;padding:8px 2px 4px;background:transparent">'
+        +'<span style="font-size:12px;font-weight:700;color:'+numColor+';'
+        +(isToday?'background:var(--blu);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:11px;':'')
+        +'">'
+        +cell.date.getDate()
+        +'</span>'
+        +'</div>';
+    }).join('');
+
+    // 주 배너 (확정/미정 배지 포함)
+    const bannerBg=wk.isSelected?'#e8f0fe':'#fee9e9';
+    const bannerBorder=wk.isSelected?'2px solid var(--blu)':'none';
+    const banner=wk.total>0
+      ? '<div data-mon="'+wk.mon+'" data-sun="'+wk.sun+'" onclick="selectInqWeek(this.dataset.mon,this.dataset.sun)"'
+        +' style="grid-column:1/-1;margin:0 8px 8px;background:'+bannerBg+';border-radius:6px;'
+        +'border:'+bannerBorder+';padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .1s">'
+        +(wk.confirmed?'<span style="font-size:11px;font-weight:700;color:var(--blu)">확정 '+wk.confirmed+'</span>':'')
+        +(wk.pending?'<span style="font-size:11px;font-weight:700;color:#e03131">미확정 '+wk.pending+'</span>':'')
+        +'</div>'
+      : '<div data-mon="'+wk.mon+'" data-sun="'+wk.sun+'" onclick="selectInqWeek(this.dataset.mon,this.dataset.sun)"'
+        +' style="grid-column:1/-1;margin:0 8px 8px;height:8px;cursor:pointer"></div>';
+
+    return '<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr)">'
+      +dayCells
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr">'
+      +banner
+      +'</div>';
+  }).join('');
+}
+
+
+window.selectInqWeek=function(mon,sun){
+  inqSelWeek={mon,sun};
+  renderInquiryCalendar(); // 선택 표시 업데이트
+  // 헤더 업데이트
+  const title=document.getElementById('inq-week-title');
+  if(title) title.textContent=mon.slice(5).replace('-','/')+'~'+sun.slice(5).replace('-','/')+' 주 문의';
+  renderInquiryList();
+};
 window.gotoList=gotoList; window.gotoMonthly=function(){
   // 현재 월을 기본값으로 설정
   const now = new Date();
@@ -1548,7 +1754,7 @@ function getRcBsPeriodsFromDOM(){
 }
 
 // 새 캠페인 모달용 상품 선택
-const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '일반 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '샘플링', '대회 티켓팅(접수) 대행'];
+const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '일반 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '매거진', '오퍼월 광고', '샘플링', '대회 티켓팅(접수) 대행'];
 let nmSelectedProds = [];
 
 window.toggleNmProd = function(p){
@@ -1729,7 +1935,7 @@ window.rDateChange=function(){
 };
 async function syncCamp(){
   const i=CAMPS.findIndex(c=>c.id===curCampId); if(i<0)return;
-  CAMPS[i]={...CAMPS[i],client:curRD.cfg.client,agency:curRD.cfg.agency,campaign:curRD.cfg.campaign,start:curRD.cfg.start,end:curRD.cfg.end,products:curRD.products};
+  CAMPS[i]={...CAMPS[i],client:curRD.cfg.client,agency:curRD.cfg.agency,campaign:curRD.cfg.campaign,start:curRD.cfg.start,end:curRD.cfg.end,products:curRD.products,budget:curRD.cfg.budget||CAMPS[i].budget,token:curRD.cfg.token,contact:curRD.cfg.contact,email:curRD.cfg.email};
   await set(ref(db,'campaigns'), CAMPS);
 }
 function renderRHeader(){
@@ -2075,7 +2281,13 @@ window.editTokenInline=function(campId, currentToken){
 // ════════════════════════════════════
 function renderMonthly(){
   renderMonthChips('month-chips-2');
-  const filtered=selMonth==='all'?CAMPS:CAMPS.filter(c=>c.start&&c.start.slice(0,7)===selMonth);
+  const filtered=selMonth==='all'?CAMPS:CAMPS.filter(c=>{
+    if(!c.start) return false;
+    if(selMonth==='all') return true;
+    // 캠페인 기간이 선택한 월과 겹치면 포함
+    const ms=selMonth+'-01', me=selMonth+'-31';
+    return c.start<=me && (c.end||c.start)>=ms;
+  });
   document.getElementById('mo-title').textContent=selMonth==='all'?'전체 캠페인 성과':`${moLabel(selMonth)} 캠페인 성과`;
   let imp=0,click=0,totalBudget=0; filtered.forEach(c=>{const m=campMetrics(c);imp+=m.imp;click+=m.click;totalBudget+=Number(c.budget||(REPORTS[c.id]?.cfg?.budget)||0);});
   const ctr=imp>0?click/imp*100:0;
@@ -2366,9 +2578,10 @@ function renderCalendar(){
         ? (e.status==='confirmed' ? 'ev-sponsor-confirmed' : 'ev-sponsor-pending')
         : (e.status==='confirmed' ? 'ev-confirmed' : 'ev-pending');
       const label = isRowStart ? e.label : '&nbsp;';
-      const spId = e.isSponsor ? e.id.replace(/_\d+$/, '') : '';
-      const clickAttr = e.isSponsor ? ` onclick="openSponsorModal('${spId}')" style="cursor:pointer"` : '';
-      evHtml += `<span class="cal-event ${posCls} ${statusCls}"${clickAttr} title="${e.isSponsor?'[스폰서십] ':''}${e.label} (${e.start}~${e.end})">${label}</span>`;
+      // 스폰서십 id에서 기간 인덱스 제거해서 원본 id 추출
+      const spBaseId = e.isSponsor ? (SPONSORS.find(s=>e.id.startsWith(s.id+'_'))?.id||'') : '';
+      const spClick = e.isSponsor && spBaseId ? ' data-spid="'+spBaseId+'" onclick="openSponsorModal(this.dataset.spid)" style="cursor:pointer"' : '';
+      evHtml += '<span class="cal-event '+posCls+' '+statusCls+'"'+spClick+' title="'+(e.isSponsor?'[스폰서십] ':'')+e.label+' ('+e.start+'~'+e.end+')">'+label+'</span>';
     });
 
     html2 += `<div class="${cls}">${dayNumHtml}${evHtml}</div>`;
@@ -2382,7 +2595,7 @@ function renderCalendar(){
 let inqEditStatus = 'pending';
 
 // 상품 목록 (THR 키 + 고정 목록 합산)
-const FIXED_PRODUCTS = ['바텀시트 팝업','메인 롤링배너','메인 띠배너','일반 띠배너','이번주 팁','퀵메뉴','인스타그램 광고','푸시 광고','LMS 광고','리워드 획득 CPC 광고','샘플링','대회 티켓팅(접수) 대행'];
+const FIXED_PRODUCTS = ['바텀시트 팝업','메인 롤링배너','메인 띠배너','일반 띠배너','이번주 팁','퀵메뉴','인스타그램 광고','푸시 광고','LMS 광고','리워드 획득 CPC 광고','매거진','오퍼월 광고','샘플링','대회 티켓팅(접수) 대행'];
 let selectedProducts = [];
 
 function getProductList(){ return FIXED_PRODUCTS; }
@@ -2541,9 +2754,35 @@ window.saveInquiry = async function(){
     INQUIRIES.push(obj);
   }
   await set(ref(db,'inquiries'), INQUIRIES);
+  // 연결된 캠페인/리포트 자동 반영
+  if(eid){
+    const linked = CAMPS.find(c=>c.inqId===eid);
+    if(linked){
+      const ci = CAMPS.findIndex(c=>c.inqId===eid);
+      CAMPS[ci] = {...CAMPS[ci],
+        client:obj.client, campaign:obj.campaign||obj.client,
+        agency:obj.agency, start:obj.start, end:obj.end,
+        products:obj.products, budget:obj.budget,
+        contact:obj.contact, email:obj.email
+      };
+      const rd = REPORTS[linked.id];
+      if(rd){
+        rd.cfg = {...rd.cfg, client:obj.client, campaign:obj.campaign||obj.client,
+          agency:obj.agency, start:obj.start, end:obj.end,
+          budget:obj.budget, contact:obj.contact, email:obj.email,
+          bs_periods:obj.bs_periods, bs_start:obj.bs_start, bs_end:obj.bs_end
+        };
+        rd.products = obj.products;
+        await Promise.all([set(ref(db,'campaigns'),CAMPS), saveRD(linked.id,rd)]);
+      } else {
+        await set(ref(db,'campaigns'),CAMPS);
+      }
+    }
+  }
   window.closeInquiryModal();
   showToast(eid?'수정되었습니다':'문의가 추가되었습니다');
   renderInquiryList();
+  if(curView==='list') renderAll();
 };
 
 window.deleteInquiry = async function(id){
@@ -2631,52 +2870,87 @@ window.toggleInquiryStatus = async function(id){
   if(curView==='calendar') renderCalendar();
 };
 
+function getWeekLabel(ts){
+  if(!ts) return '날짜 미상';
+  const d = new Date(ts);
+  const day = d.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  const mon = new Date(d); mon.setDate(d.getDate()+diff);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  const fmt = x => `${x.getMonth()+1}/${x.getDate()}`;
+  return `${mon.getFullYear()}년 ${mon.getMonth()+1}월 ${fmt(mon)} ~ ${fmt(sun)}`;
+}
+
 function renderInquiryList(){
   const el = document.getElementById('inq-list'); if(!el) return;
   const q = (document.getElementById('inq-srch')?.value||'').toLowerCase().trim();
   let list = [...INQUIRIES].sort((a,b)=>b.created-a.created);
-  if(q) list = list.filter(i=>(i.client||'').toLowerCase().includes(q)||(i.agency||'').toLowerCase().includes(q));
+  // 선택된 주 필터
+  if(inqSelWeek){
+    list=list.filter(inq=>{
+      const d2=new Date(inq.created||0);
+      const ds=`${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+      return ds>=inqSelWeek.mon&&ds<=inqSelWeek.sun;
+    });
+  }
+  if(q) list = list.filter(i=>
+    (i.client||'').toLowerCase().includes(q)||
+    (i.agency||'').toLowerCase().includes(q)||
+    (i.campaign||'').toLowerCase().includes(q)
+  );
+  // 통계 헤더 업데이트
+  const statsEl=document.getElementById('inq-week-stats');
+  if(statsEl){
+    const conf=list.filter(i=>i.status==='confirmed').length;
+    const pend=list.filter(i=>i.status==='pending').length;
+    statsEl.innerHTML=(list.length?'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--blu-bg);color:var(--blu)">확정 '+conf+'</span>'
+      +'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--bg);color:var(--t3)">미정 '+pend+'</span>':'');
+  }
   if(!list.length){
-    el.innerHTML=`<div class="empty">광고 문의가 없습니다<br><span style="font-size:12px">+ 새 문의를 추가해보세요</span></div>`;
+    el.innerHTML='<div style="padding:48px;text-align:center;color:var(--t3);font-size:13px">'+(inqSelWeek?'이 주에 등록된 문의가 없습니다':'주를 선택하면 문의 리스트가 표시됩니다')+'</div>';
     return;
   }
-  el.innerHTML = list.map(inq=>{
+  const weekGroups=[{label:'',ts:0,items:list}]; // 선택된 주 내에선 그룹 없이 단순 목록
+
+  const cardHtml = (inq) => {
     const statusLabel = inq.status==='confirmed' ? '확정' : '미정';
     const statusCls   = inq.status==='confirmed' ? 'confirmed' : 'pending';
     const cardCls     = inq.status==='confirmed' ? 'inq-card confirmed' : 'inq-card pending';
     const rawBudget = inq.budget ? inq.budget.toString().replace(/[^0-9]/g,'') : '';
     const budget = rawBudget ? Number(rawBudget).toLocaleString('ko-KR')+'원' : '';
-    const period      = (inq.start&&inq.end) ? `${inq.start} ~ ${inq.end}` : '';
-    const bsPeriodsArr = Array.isArray(inq.bs_periods) && inq.bs_periods.length
+    const period = (inq.start&&inq.end) ? inq.start+' ~ '+inq.end : '';
+    const bsPeriodsArr = Array.isArray(inq.bs_periods)&&inq.bs_periods.length
       ? inq.bs_periods : (inq.bs_start ? [{start:inq.bs_start,end:inq.bs_end}] : []);
-    const bsPeriod = bsPeriodsArr.filter(p=>p.start).map(p=>`${p.start} ~ ${p.end}`).join(' · ');
+    const bsPeriod = bsPeriodsArr.filter(p=>p.start).map(p=>p.start+' ~ '+p.end).join(' · ');
     const contactStr = [inq.contact, inq.email].filter(Boolean).join(' · ');
-    const prods       = (inq.products||[]).length ? `${inq.products.join(', ')}` : '';
-    return `<div class="${cardCls}">
-      <div class="inq-card-body">
-        <div class="inq-title">
-          ${inq.client||'(광고주 없음)'}
-          ${inq.campaign ? `<span style="font-size:12px;font-weight:600;color:var(--t1)"> · ${inq.campaign}</span>` : ''}
-          ${inq.agency ? `<span style="font-size:12px;font-weight:500;color:var(--t2)"> · ${inq.agency}</span>` : ''}
-          <span class="inq-status-badge ${statusCls}" style="font-size:10px;padding:2px 8px">${statusLabel}</span>
-        </div>
-        ${contactStr ? `<div style="font-size:11px;color:var(--t3);margin-bottom:5px">${contactStr}</div>` : ''}
-        <div class="inq-meta">
-          ${budget?`<span style="color:#2f9e44;font-weight:700">${budget}</span>`:''}
-          ${period?`<span>${period}</span>`:''}
-          ${prods?`<span>${prods}</span>`:''}
-          ${bsPeriod?`<div style="margin-top:3px;font-size:11px;color:#868e96;width:100%">바텀시트 ${bsPeriod}</div>`:''}
-        </div>
-        ${inq.push_dates&&inq.push_dates.length ? `<div style="font-size:11px;color:#7048e8;margin-top:4px">앱푸시: ${inq.push_dates.join(', ')}</div>` : ''}
-        ${inq.note ? `<div class="inq-note">${inq.note}</div>` : ''}
-      </div>
-      <div class="inq-actions">
-        <button class="btn btn-sm" onclick="toggleInquiryStatus('${inq.id}')" style="font-size:10px">${inq.status==='confirmed'?'미정으로':'확정'}</button>
-        <button class="btn-icon" onclick="openInquiryModal('${inq.id}')">✏️</button>
-        <button class="btn-icon del" onclick="deleteInquiry('${inq.id}')">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
+    const prods = (inq.products||[]).length ? (inq.products||[]).join(', ') : '';
+    return '<div class="'+cardCls+'">'
+      +'<div class="inq-card-body">'
+      +'<div class="inq-title">'
+      +(inq.client||'(광고주 없음)')
+      +(inq.campaign ? '<span style="font-size:12px;font-weight:600;color:var(--t1)"> · '+inq.campaign+'</span>' : '')
+      +(inq.agency ? '<span style="font-size:12px;font-weight:500;color:var(--t2)"> · '+inq.agency+'</span>' : '')
+      +'<span class="inq-status-badge '+statusCls+'" style="font-size:10px;padding:2px 8px">'+statusLabel+'</span>'
+      +'</div>'
+      +(contactStr ? '<div style="font-size:11px;color:var(--t3);margin-bottom:5px">'+contactStr+'</div>' : '')
+      +'<div class="inq-meta">'
+      +(budget ? '<span style="color:#2f9e44;font-weight:700">'+budget+'</span>' : '')
+      +(period ? '<span>'+period+'</span>' : '')
+      +(prods ? '<span>'+prods+'</span>' : '')
+      +(bsPeriod ? '<div style="margin-top:3px;font-size:11px;color:#868e96;width:100%">바텀시트 '+bsPeriod+'</div>' : '')
+      +'</div>'
+      +((inq.push_dates&&inq.push_dates.length) ? '<div style="font-size:11px;color:#7048e8;margin-top:4px">앱푸시: '+inq.push_dates.join(', ')+'</div>' : '')
+      +(inq.note ? '<div class="inq-note">'+inq.note+'</div>' : '')
+      +'</div>'
+      +'<div class="inq-actions">'
+      +'<button class="btn btn-sm" data-iid="'+inq.id+'" onclick="toggleInquiryStatus(this.dataset.iid)" style="font-size:10px">'+(inq.status==='confirmed'?'미정으로':'확정')+'</button>'
+      +'<button class="btn-icon" data-iid="'+inq.id+'" onclick="openInquiryModal(this.dataset.iid)">✏️</button>'
+      +'<button class="btn-icon del" data-iid="'+inq.id+'" onclick="deleteInquiry(this.dataset.iid)">🗑</button>'
+      +'</div>'
+      +'</div>';
+  };
+
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'+list.map(cardHtml).join('')+'</div>';
 }
 
 // keyboard nav
