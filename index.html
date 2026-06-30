@@ -657,7 +657,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 </div>
 
 <!-- modals -->
-<div class="ovl" id="new-ovl" onclick="if(event.target===this)closeNewModal()">
+<div class="ovl" id="new-ovl" onmousedown="window._ovlMouseDownTarget=event.target" onclick="if(event.target===this&&window._ovlMouseDownTarget===this)closeNewModal()">
   <div class="modal">
     <div class="modal-title" id="nm-title">새 캠페인 추가</div>
     <div class="modal-sub">기본 정보를 입력하세요</div>
@@ -693,7 +693,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
   </div>
 </div>
 
-<div class="ovl" id="share-ovl" onclick="if(event.target===this)closeShare()">
+<div class="ovl" id="share-ovl" onmousedown="window._ovlMouseDownTarget=event.target" onclick="if(event.target===this&&window._ovlMouseDownTarget===this)closeShare()">
   <div class="modal" style="max-width:400px">
     <div class="modal-title">공유 링크 생성</div>
     <div class="modal-sub">이 링크를 랩사에 전달하세요. 성과 데이터만 표시됩니다.</div>
@@ -706,7 +706,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 </div>
 
 <!-- 광고문의 모달 -->
-<div class="ovl" id="inq-ovl" onclick="if(event.target===this)closeInquiryModal()">
+<div class="ovl" id="inq-ovl" onmousedown="window._ovlMouseDownTarget=event.target" onclick="if(event.target===this&&window._ovlMouseDownTarget===this)closeInquiryModal()">
   <div class="modal inq-modal">
     <div class="modal-title" id="inq-modal-title">새 광고 문의</div>
     <input type="hidden" id="inq-id">
@@ -765,7 +765,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 </div>
 
 <!-- 스폰서십 모달 -->
-<div class="ovl" id="sponsor-ovl" onclick="if(event.target===this)closeSponsorModal()">
+<div class="ovl" id="sponsor-ovl" onmousedown="window._ovlMouseDownTarget=event.target" onclick="if(event.target===this&&window._ovlMouseDownTarget===this)closeSponsorModal()">
   <div class="modal" style="max-width:480px">
     <div class="modal-title" id="sponsor-modal-title">스폰서십 바텀시트 추가</div>
     <input type="hidden" id="sp-id">
@@ -983,8 +983,15 @@ function startListeners(){
   // Sponsors
   onValue(ref(db,'sponsors'), snap=>{
     const raw = snap.val();
-    // Firebase는 배열을 객체로 저장하므로 Object.values로 변환
-    SPONSORS = raw ? (Array.isArray(raw) ? raw : Object.values(raw)).filter(Boolean) : [];
+    if(!raw){ SPONSORS=[]; }
+    else {
+      // 배열로 저장된 경우(이전 버전)와 객체로 저장된 경우 모두 처리
+      const vals = Array.isArray(raw) ? raw : Object.values(raw);
+      SPONSORS = vals.filter(Boolean).map((s,i)=>({
+        ...s,
+        id: s.id || ('sp_legacy_'+i) // id 없으면 임시 id 부여
+      }));
+    }
     if(dbReady && curView==='calendar'){ renderCalendar(); renderSponsorList(); }
   }, ()=>{});
 
@@ -1333,9 +1340,12 @@ window.saveSponsor = async function(){
     created: eid ? (SPONSORS.find(s=>s.id===eid)||{}).created||Date.now() : Date.now(),
     updated: Date.now()
   };
-  if(eid){ const i=SPONSORS.findIndex(s=>s.id===eid); if(i>=0) SPONSORS[i]=obj; else SPONSORS.push(obj); }
-  else { SPONSORS.push(obj); }
-  await set(ref(db,'sponsors'), SPONSORS);
+  // {id: obj} 형태로 저장 (Firebase 배열 문제 방지)
+  const spMap = {};
+  SPONSORS.forEach(s=>{ if(s&&s.id) spMap[s.id]=s; });
+  spMap[obj.id] = obj;
+  if(!eid) SPONSORS.push(obj); else { const i=SPONSORS.findIndex(s=>s.id===eid); if(i>=0) SPONSORS[i]=obj; }
+  await set(ref(db,'sponsors'), spMap);
   closeSponsorModal();
   showToast(eid?'수정되었습니다':'스폰서십이 추가되었습니다');
   renderCalendar();
@@ -1345,7 +1355,9 @@ window.saveSponsor = async function(){
 window.quickDeleteSponsor = async function(id){
   if(!id || !confirm('이 스폰서십을 삭제하시겠습니까?')) return;
   SPONSORS = SPONSORS.filter(s=>s.id!==id);
-  await set(ref(db,'sponsors'), SPONSORS);
+  const spMap3 = {};
+  SPONSORS.forEach(s=>{ if(s&&s.id) spMap3[s.id]=s; });
+  await set(ref(db,'sponsors'), spMap3);
   showToast('삭제되었습니다');
   renderCalendar();
   renderSponsorList();
@@ -1355,7 +1367,9 @@ window.deleteSponsor = async function(){
   const eid = document.getElementById('sp-id').value; if(!eid) return;
   if(!confirm('이 스폰서십을 삭제하시겠습니까?')) return;
   SPONSORS = SPONSORS.filter(s=>s.id!==eid);
-  await set(ref(db,'sponsors'), SPONSORS);
+  const spMap2 = {};
+  SPONSORS.forEach(s=>{ if(s&&s.id) spMap2[s.id]=s; });
+  await set(ref(db,'sponsors'), spMap2);
   closeSponsorModal();
   showToast('삭제되었습니다');
   renderCalendar();
@@ -1754,7 +1768,7 @@ function getRcBsPeriodsFromDOM(){
 }
 
 // 새 캠페인 모달용 상품 선택
-const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '일반 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '매거진', '오퍼월 광고', '샘플링', '대회 티켓팅(접수) 대행'];
+const ALL_PRODUCTS = ['바텀시트 팝업', '메인 롤링배너', '메인 띠배너', '기록면 띠배너', '접수면 띠배너', '이번주 팁', '퀵메뉴', '인스타그램 광고', '푸시 광고', 'LMS 광고', '리워드 획득 CPC 광고', '매거진', '오퍼월 광고', '샘플링', '대회 티켓팅(접수) 대행'];
 let nmSelectedProds = [];
 
 window.toggleNmProd = function(p){
@@ -2527,7 +2541,7 @@ function renderCalendar(){
     const periods = Array.isArray(sp.periods)&&sp.periods.length ? sp.periods : [];
     periods.forEach((p,pi)=>{
       if(!p.start||!p.end) return;
-      events.push({id:'sp_'+si+'_'+pi, label, start:p.start, end:p.end, status, isSponsor:true});
+      events.push({id:sp.id+'__'+pi, label, start:p.start, end:p.end, status, isSponsor:true, spId:sp.id});
     });
   });
 
@@ -2579,12 +2593,12 @@ function renderCalendar(){
         : (e.status==='confirmed' ? 'ev-confirmed' : 'ev-pending');
       const label = isRowStart ? e.label : '&nbsp;';
       // 스폰서십 id에서 기간 인덱스 제거해서 원본 id 추출
-      const spBaseId = e.isSponsor ? (SPONSORS.find(s=>e.id.startsWith(s.id+'_'))?.id||'') : '';
+      const spBaseId = e.isSponsor ? (e.spId||'') : '';
       const spClick = e.isSponsor && spBaseId ? ' data-spid="'+spBaseId+'" onclick="openSponsorModal(this.dataset.spid)" style="cursor:pointer"' : '';
       evHtml += '<span class="cal-event '+posCls+' '+statusCls+'"'+spClick+' title="'+(e.isSponsor?'[스폰서십] ':'')+e.label+' ('+e.start+'~'+e.end+')">'+label+'</span>';
     });
 
-    html2 += `<div class="${cls}">${dayNumHtml}${evHtml}</div>`;
+    html2 += '<div class="'+cls+'">'+dayNumHtml+evHtml+'</div>';
   }
   grid.innerHTML = html2;
 }
@@ -2595,7 +2609,7 @@ function renderCalendar(){
 let inqEditStatus = 'pending';
 
 // 상품 목록 (THR 키 + 고정 목록 합산)
-const FIXED_PRODUCTS = ['바텀시트 팝업','메인 롤링배너','메인 띠배너','일반 띠배너','이번주 팁','퀵메뉴','인스타그램 광고','푸시 광고','LMS 광고','리워드 획득 CPC 광고','매거진','오퍼월 광고','샘플링','대회 티켓팅(접수) 대행'];
+const FIXED_PRODUCTS = ['바텀시트 팝업','메인 롤링배너','메인 띠배너','기록면 띠배너','접수면 띠배너','이번주 팁','퀵메뉴','인스타그램 광고','푸시 광고','LMS 광고','리워드 획득 CPC 광고','매거진','오퍼월 광고','샘플링','대회 티켓팅(접수) 대행'];
 let selectedProducts = [];
 
 function getProductList(){ return FIXED_PRODUCTS; }
