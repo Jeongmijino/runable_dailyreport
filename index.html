@@ -304,7 +304,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 </div>
 
 <!-- 관리자 비밀번호 화면 -->
-<div class="lock-screen"<div class="lock-screen" id="lock-screen" style="display:none">
+<div class="lock-screen" id="lock-screen" style="display:none">
   <div class="lock-box">
     <div class="lock-logo">RUNNBLE</div>
     <div class="lock-sub">Ad Operations</div>
@@ -1471,9 +1471,17 @@ function renderInquiryCalendar(){
   const dayCounts={};
   INQUIRIES.forEach(inq=>{
     const d=toLocalDs(inq.created);
-    if(!dayCounts[d]) dayCounts[d]={confirmed:0,pending:0};
-    if(inq.status==='confirmed') dayCounts[d].confirmed++;
-    else dayCounts[d].pending++;
+    if(!dayCounts[d]) dayCounts[d]={new:0,pending:0};
+    dayCounts[d].new++;
+    if(inq.status!=='confirmed') dayCounts[d].pending++;
+  });
+  // 확정된 "시점"(주) 기준 집계 — 문의가 다른 주에 들어왔어도 확정된 주에 표시되도록
+  const confirmDayCounts={};
+  INQUIRIES.forEach(inq=>{
+    if(inq.status==='confirmed' && inq.confirmedAt){
+      const d=toLocalDs(inq.confirmedAt);
+      confirmDayCounts[d]=(confirmDayCounts[d]||0)+1;
+    }
   });
 
   // 주 시작(일)~끝(토) 계산 - 달력이 일요일 시작이므로 일~토 기준
@@ -1490,14 +1498,15 @@ function renderInquiryCalendar(){
 
   // 주별 문의 집계
   const weekStats=rows.map(row=>{
-    let confirmed=0,pending=0;
+    let newCount=0,pending=0,confirmedThisWeek=0;
     row.forEach(cell=>{
       const d=ds(cell.date);
-      if(dayCounts[d]){confirmed+=dayCounts[d].confirmed;pending+=dayCounts[d].pending;}
+      if(dayCounts[d]){newCount+=dayCounts[d].new;pending+=dayCounts[d].pending;}
+      if(confirmDayCounts[d]){confirmedThisWeek+=confirmDayCounts[d];}
     });
     const {mon,sun}=getWeekStartEnd(row[0].date);
     const isSelected=inqSelWeek&&inqSelWeek.mon===mon;
-    return {row,mon,sun,confirmed,pending,total:confirmed+pending,isSelected};
+    return {row,mon,sun,newCount,pending,confirmedThisWeek,total:newCount+confirmedThisWeek,isSelected};
   });
 
   // 렌더링: 주 행 = 날짜 7칸 + 주 배너
@@ -1523,8 +1532,8 @@ function renderInquiryCalendar(){
       ? '<div data-mon="'+wk.mon+'" data-sun="'+wk.sun+'" onclick="selectInqWeek(this.dataset.mon,this.dataset.sun)"'
         +' style="grid-column:1/-1;margin:0 8px 8px;background:'+bannerBg+';border-radius:6px;'
         +'border:'+bannerBorder+';padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .1s">'
-        +(wk.confirmed?'<span style="font-size:11px;font-weight:700;color:var(--blu)">확정 '+wk.confirmed+'</span>':'')
-        +(wk.pending?'<span style="font-size:11px;font-weight:700;color:#e03131">미확정 '+wk.pending+'</span>':'')
+        +(wk.newCount?'<span style="font-size:11px;font-weight:700;color:#e03131">신규 '+wk.newCount+'</span>':'')
+        +(wk.confirmedThisWeek?'<span style="font-size:11px;font-weight:700;color:var(--blu)">확정 '+wk.confirmedThisWeek+'</span>':'')
         +'</div>'
       : '<div data-mon="'+wk.mon+'" data-sun="'+wk.sun+'" onclick="selectInqWeek(this.dataset.mon,this.dataset.sun)"'
         +' style="grid-column:1/-1;margin:0 8px 8px;height:8px;cursor:pointer"></div>';
@@ -2741,6 +2750,7 @@ window.saveInquiry = async function(){
   const eid = document.getElementById('inq-id').value;
   const products = selectedProducts;
   const rawBudget = document.getElementById('inq-budget').value.replace(/[^0-9]/g,'');
+  const prevInq = eid ? INQUIRIES.find(q=>q.id===eid) : null;
   const obj = {
     id: eid || 'iq_'+Date.now(),
     client,
@@ -2758,7 +2768,11 @@ window.saveInquiry = async function(){
     products,
     note:   document.getElementById('inq-note').value.trim(),
     status: inqEditStatus,
-    created: eid ? (INQUIRIES.find(q=>q.id===eid)||{}).created||Date.now() : Date.now(),
+    // 확정 시점 기록: 이미 확정 상태였다면 기존 확정일 유지, 새로 확정되는 거라면 지금 시각으로 기록
+    confirmedAt: inqEditStatus==='confirmed'
+      ? ((prevInq && prevInq.status==='confirmed') ? (prevInq.confirmedAt||prevInq.updated||Date.now()) : Date.now())
+      : null,
+    created: eid ? (prevInq||{}).created||Date.now() : Date.now(),
     updated: Date.now()
   };
   if(eid){
@@ -2810,7 +2824,9 @@ window.deleteInquiry = async function(id){
 window.toggleInquiryStatus = async function(id){
   const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
   const wasConfirmed = inq.status === 'confirmed';
+  const prevConfirmedAt = inq.confirmedAt || null;
   inq.status = wasConfirmed ? 'pending' : 'confirmed';
+  inq.confirmedAt = wasConfirmed ? null : Date.now(); // 확정된 "시점"(주)을 별도 기록 — 문의 접수 주와 달라도 추적 가능
   inq.updated = Date.now();
   await set(ref(db,'inquiries'), INQUIRIES);
 
@@ -2874,6 +2890,7 @@ window.toggleInquiryStatus = async function(id){
       } else {
         // 취소 시 상태 되돌리기
         inq.status = 'confirmed';
+        inq.confirmedAt = prevConfirmedAt || Date.now();
         await set(ref(db,'inquiries'), INQUIRIES);
       }
     } else {
@@ -2898,14 +2915,29 @@ function getWeekLabel(ts){
 function renderInquiryList(){
   const el = document.getElementById('inq-list'); if(!el) return;
   const q = (document.getElementById('inq-srch')?.value||'').toLowerCase().trim();
-  let list = [...INQUIRIES].sort((a,b)=>b.created-a.created);
-  // 선택된 주 필터
+  const inWeek = (ts,wk) => {
+    if(!ts||!wk) return false;
+    const d2=new Date(ts);
+    const dstr=`${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+    return dstr>=wk.mon && dstr<=wk.sun;
+  };
+  let list;
   if(inqSelWeek){
-    list=list.filter(inq=>{
-      const d2=new Date(inq.created||0);
-      const ds=`${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
-      return ds>=inqSelWeek.mon&&ds<=inqSelWeek.sun;
-    });
+    // 이번 주 필터: (a) 이번 주에 "새로 들어온" 문의 + (b) 이번 주에 "확정된" 문의(접수는 다른 주여도 포함)
+    list = INQUIRIES
+      .filter(inq=>{
+        const isNew = inWeek(inq.created, inqSelWeek);
+        const isConfirmedThisWeek = inq.status==='confirmed' && inWeek(inq.confirmedAt, inqSelWeek);
+        return isNew || isConfirmedThisWeek;
+      })
+      .map(inq=>({
+        ...inq,
+        _isNew: inWeek(inq.created, inqSelWeek),
+        _isConfirmedThisWeek: inq.status==='confirmed' && inWeek(inq.confirmedAt, inqSelWeek)
+      }))
+      .sort((a,b)=>(b.confirmedAt||b.created||0)-(a.confirmedAt||a.created||0));
+  } else {
+    list = [...INQUIRIES].sort((a,b)=>b.created-a.created);
   }
   if(q) list = list.filter(i=>
     (i.client||'').toLowerCase().includes(q)||
@@ -2915,13 +2947,20 @@ function renderInquiryList(){
   // 통계 헤더 업데이트
   const statsEl=document.getElementById('inq-week-stats');
   if(statsEl){
-    const conf=list.filter(i=>i.status==='confirmed').length;
-    const pend=list.filter(i=>i.status==='pending').length;
-    statsEl.innerHTML=(list.length?'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--blu-bg);color:var(--blu)">확정 '+conf+'</span>'
-      +'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--bg);color:var(--t3)">미정 '+pend+'</span>':'');
+    if(inqSelWeek){
+      const newCnt=list.filter(i=>i._isNew).length;
+      const confCnt=list.filter(i=>i._isConfirmedThisWeek).length;
+      statsEl.innerHTML=(list.length?'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:#fee9e9;color:#e03131">신규 '+newCnt+'</span>'
+        +'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--blu-bg);color:var(--blu)">확정 '+confCnt+'</span>':'');
+    } else {
+      const conf=list.filter(i=>i.status==='confirmed').length;
+      const pend=list.filter(i=>i.status==='pending').length;
+      statsEl.innerHTML=(list.length?'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--blu-bg);color:var(--blu)">확정 '+conf+'</span>'
+        +'<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--bg);color:var(--t3)">미정 '+pend+'</span>':'');
+    }
   }
   if(!list.length){
-    el.innerHTML='<div style="padding:48px;text-align:center;color:var(--t3);font-size:13px">'+(inqSelWeek?'이 주에 등록된 문의가 없습니다':'주를 선택하면 문의 리스트가 표시됩니다')+'</div>';
+    el.innerHTML='<div style="padding:48px;text-align:center;color:var(--t3);font-size:13px">'+(inqSelWeek?'이 주에 해당하는 문의가 없습니다':'주를 선택하면 문의 리스트가 표시됩니다')+'</div>';
     return;
   }
   const weekGroups=[{label:'',ts:0,items:list}]; // 선택된 주 내에선 그룹 없이 단순 목록
@@ -2938,6 +2977,11 @@ function renderInquiryList(){
     const bsPeriod = bsPeriodsArr.filter(p=>p.start).map(p=>p.start+' ~ '+p.end).join(' · ');
     const contactStr = [inq.contact, inq.email].filter(Boolean).join(' · ');
     const prods = (inq.products||[]).length ? (inq.products||[]).join(', ') : '';
+    // 접수일 / 확정일을 카드에 항상 명시 — 같은 건이 접수 주와 확정 주 양쪽에 보여도
+    // 날짜를 보면 "같은 건이 두 시점에 걸쳐 있는 것"임을 바로 알 수 있게 함 (중복 등록으로 오인 방지)
+    const fmtDate = ts => { if(!ts) return ''; const d=new Date(ts); return (d.getMonth()+1)+'/'+d.getDate(); };
+    const dateTrail = '<span style="color:var(--t3)">접수 '+fmtDate(inq.created)+'</span>'
+      + (inq.status==='confirmed' && inq.confirmedAt ? '<span style="color:var(--blu);font-weight:700"> → 확정 '+fmtDate(inq.confirmedAt)+'</span>' : '');
     return '<div class="'+cardCls+'">'
       +'<div class="inq-card-body">'
       +'<div class="inq-title">'
@@ -2946,6 +2990,7 @@ function renderInquiryList(){
       +(inq.agency ? '<span style="font-size:12px;font-weight:500;color:var(--t2)"> · '+inq.agency+'</span>' : '')
       +'<span class="inq-status-badge '+statusCls+'" style="font-size:10px;padding:2px 8px">'+statusLabel+'</span>'
       +'</div>'
+      +'<div style="font-size:11px;margin-bottom:5px">'+dateTrail+'</div>'
       +(contactStr ? '<div style="font-size:11px;color:var(--t3);margin-bottom:5px">'+contactStr+'</div>' : '')
       +'<div class="inq-meta">'
       +(budget ? '<span style="color:#2f9e44;font-weight:700">'+budget+'</span>' : '')
