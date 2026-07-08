@@ -262,6 +262,11 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 .cal-legend-dot{width:10px;height:10px;border-radius:2px}
 .cal-legend-dot.confirmed{background:#dbe4ff;border:1px solid var(--blu)}
 .cal-legend-dot.pending{background:#f1f3f5;border:1px dashed #ced4da}
+.cal-legend-dot.cancelled{background:#fff5f5;border:1px dashed #ffa8a8}
+.cal-event.ev-cancelled{background:#fff5f5;color:#c92a2a;border:1px dashed #ffa8a8;text-decoration:line-through;opacity:.6}
+.inq-status-badge.cancelled{background:#fff5f5;color:#c92a2a}
+.status-toggle button.active-cancelled{background:#fff5f5;color:#c92a2a;border-color:#c92a2a}
+.itr.cancelled-row td{opacity:.55}
 
 /* ── 광고 문의 뷰 ── */
 .inq-header{padding:0 28px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
@@ -500,10 +505,27 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th><th class="r" style="color:#2f9e44">예산</th>
         </tr></thead><tbody id="mo-tbody"></tbody></table></div>
       </div>
-      <div><div class="mvt">랩사별 합산</div>
-        <div class="mvcard"><table><thead><tr>
-          <th>랩사</th><th class="r">캠페인</th><th class="r">노출수</th><th class="r">클릭수</th><th class="r">CTR</th>
-        </tr></thead><tbody id="ag-tbody"></tbody></table></div>
+
+      <!-- 주간별 통계 -->
+      <div>
+        <div class="mvt">📅 주간별 성과</div>
+        <div class="mvcard" style="padding:20px 24px">
+          <div id="weekly-chart"></div>
+        </div>
+      </div>
+
+      <!-- 요일별 통계 -->
+      <div>
+        <div class="mvt">📊 요일별 평균 성과</div>
+        <div class="mvcard" style="padding:20px 24px">
+          <div id="dow-chart"></div>
+        </div>
+      </div>
+
+      <!-- 전환율 -->
+      <div>
+        <div class="mvt">📋 문의 → 확정 전환율</div>
+        <div class="mvcard" id="conversion-card" style="padding:20px 22px"></div>
       </div>
     </div>
   </div>
@@ -720,6 +742,7 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="status-toggle" id="inq-status-toggle">
         <button onclick="setInqStatus('pending')" id="inq-st-pending" class="active-pending">미정</button>
         <button onclick="setInqStatus('confirmed')" id="inq-st-confirmed" class="inactive">확정</button>
+        <button onclick="setInqStatus('cancelled')" id="inq-st-cancelled" class="inactive">캔슬</button>
       </div>
     </div>
     <div class="inq-section">
@@ -756,6 +779,10 @@ tr.sumr td.rc .ci{color:#fcc2d7}
     <div class="inq-section">
       <div class="inq-section-title">기타 사항</div>
       <div class="mfld"><textarea id="inq-note" placeholder="특이사항, 요청사항 등..." rows="3" style="font-family:var(--fn);font-size:12px;padding:8px 10px;border:1px solid var(--bdr2);border-radius:var(--r);background:#fff;color:var(--t1);width:100%;resize:vertical;line-height:1.5"></textarea></div>
+    </div>
+    <div class="inq-section" id="cancel-reason-section" style="display:none">
+      <div class="inq-section-title" style="color:#c92a2a">캔슬 사유</div>
+      <div class="mfld"><textarea id="inq-cancel-reason" placeholder="캔슬 사유를 입력하세요..." rows="2" style="font-family:var(--fn);font-size:12px;padding:8px 10px;border:1px solid #ffa8a8;border-radius:var(--r);background:#fff5f5;color:#c92a2a;width:100%;resize:vertical;line-height:1.5"></textarea></div>
     </div>
     <div class="mac">
       <button class="btn" onclick="closeInquiryModal()">취소</button>
@@ -1473,7 +1500,7 @@ function renderInquiryCalendar(){
     const d=toLocalDs(inq.created);
     if(!dayCounts[d]) dayCounts[d]={new:0,pending:0};
     dayCounts[d].new++;
-    if(inq.status!=='confirmed') dayCounts[d].pending++;
+    if(inq.status!=='confirmed' && inq.status!=='cancelled') dayCounts[d].pending++;
   });
   // 확정된 "시점"(주) 기준 집계 — 문의가 다른 주에 들어왔어도 확정된 주에 표시되도록
   const confirmDayCounts={};
@@ -2306,8 +2333,6 @@ function renderMonthly(){
   renderMonthChips('month-chips-2');
   const filtered=selMonth==='all'?CAMPS:CAMPS.filter(c=>{
     if(!c.start) return false;
-    if(selMonth==='all') return true;
-    // 캠페인 기간이 선택한 월과 겹치면 포함
     const ms=selMonth+'-01', me=selMonth+'-31';
     return c.start<=me && (c.end||c.start)>=ms;
   });
@@ -2320,36 +2345,266 @@ function renderMonthly(){
     <div class="kpi blue"><div class="kl">총 클릭수</div><div class="kv">${N(click)}</div></div>
     <div class="kpi gray"><div class="kl">평균 CTR</div><div class="kv" style="color:var(--t1)">${ctr.toFixed(2)}%</div></div>
     <div class="kpi grn"><div class="kl">총 예산</div><div class="kv" style="color:#2f9e44">${totalBudget>0?totalBudget.toLocaleString('ko-KR')+'원':'-'}</div></div>`;
+
+  // ── 캠페인 목록 ──
   const tb=document.getElementById('mo-tbody');
-  if(!filtered.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';return;}
-  let tI=0,tC=0,tBudget=0;
-  tb.innerHTML=filtered.sort((a,b)=>(a.start||'').localeCompare(b.start||'')).map(c=>{
-    const m=campMetrics(c);tI+=m.imp;tC+=m.click;
-    tBudget+=Number(c.budget||(REPORTS[c.id]?.cfg?.budget)||0);
-    const campBudget = c.budget || (REPORTS[c.id]?.cfg?.budget) || '';
-    const budgetDisp = campBudget ? Number(campBudget).toLocaleString('ko-KR')+'원' : '-';
-    return `<tr onclick="openReport('${c.id}')" style="cursor:pointer">
-      <td><strong>${c.campaign||''}</strong></td><td>${c.client||''}</td>
-      <td><span class="chip cb">${c.agency||''}</span></td>
-      <td style="font-size:11px;color:var(--t2)">${c.start||''} ~ ${c.end||''}</td>
-      <td class="r">${N(m.imp)}</td><td class="r">${N(m.click)}</td>
-      <td class="r">${ctrNoThr(m.ctr)}</td>
-      <td class="r" style="color:#2f9e44;font-weight:700">${budgetDisp}</td>
-    </tr>`;
-  }).join('');
-  const tc=tI>0?tC/tI*100:0;
-  tb.innerHTML+=`<tr class="sumr"><td colspan="4">합계</td><td class="r">${N(tI)}</td><td class="r">${N(tC)}</td><td class="r">${tc.toFixed(2)}%</td><td class="r" style="color:#6ee7b7">${tBudget>0?tBudget.toLocaleString("ko-KR")+"원":""}</td></tr>`;
-  const agMap={};
-  filtered.forEach(c=>{const ag=c.agency||'(미설정)';if(!agMap[ag])agMap[ag]={count:0,imp:0,click:0};const m=campMetrics(c);agMap[ag].count++;agMap[ag].imp+=m.imp;agMap[ag].click+=m.click;});
-  const at=document.getElementById('ag-tbody');
-  const rows=Object.entries(agMap).sort((a,b)=>b[1].imp-a[1].imp);
-  if(!rows.length){at.innerHTML='<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';return;}
-  let aI=0,aC=0,aCo=0;
-  at.innerHTML=rows.map(([ag,d])=>{aI+=d.imp;aC+=d.click;aCo+=d.count;
-    const c2=d.imp>0?d.click/d.imp*100:0;
-    return `<tr><td><span class="chip cb">${ag}</span></td><td class="r">${d.count}</td><td class="r">${N(d.imp)}</td><td class="r">${N(d.click)}</td><td class="r">${ctrNoThr(c2)}</td></tr>`;
-  }).join('');
-  at.innerHTML+=`<tr class="sumr"><td>합계</td><td class="r">${aCo}</td><td class="r">${N(aI)}</td><td class="r">${N(aC)}</td><td class="r">${(aI>0?aC/aI*100:0).toFixed(2)}%</td></tr>`;
+  if(!filtered.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--t3)">데이터 없음</td></tr>';}
+  else {
+    let tI=0,tC=0,tBudget=0;
+    tb.innerHTML=filtered.sort((a,b)=>(a.start||'').localeCompare(b.start||'')).map(c=>{
+      const m=campMetrics(c);tI+=m.imp;tC+=m.click;
+      tBudget+=Number(c.budget||(REPORTS[c.id]?.cfg?.budget)||0);
+      const campBudget = c.budget || (REPORTS[c.id]?.cfg?.budget) || '';
+      const budgetDisp = campBudget ? Number(campBudget).toLocaleString('ko-KR')+'원' : '-';
+      return `<tr onclick="openReport('${c.id}')" style="cursor:pointer">
+        <td><strong>${c.campaign||''}</strong></td><td>${c.client||''}</td>
+        <td><span class="chip cb">${c.agency||''}</span></td>
+        <td style="font-size:11px;color:var(--t2)">${c.start||''} ~ ${c.end||''}</td>
+        <td class="r">${N(m.imp)}</td><td class="r">${N(m.click)}</td>
+        <td class="r">${ctrNoThr(m.ctr)}</td>
+        <td class="r" style="color:#2f9e44;font-weight:700">${budgetDisp}</td>
+      </tr>`;
+    }).join('');
+    const tc=tI>0?tC/tI*100:0;
+    tb.innerHTML+=`<tr class="sumr"><td colspan="4">합계</td><td class="r">${N(tI)}</td><td class="r">${N(tC)}</td><td class="r">${tc.toFixed(2)}%</td><td class="r" style="color:#6ee7b7">${tBudget>0?tBudget.toLocaleString('ko-KR')+'원':''}</td></tr>`;
+  }
+
+  // ── 주간별 / 요일별 통계 ──
+  const DOW_KR = ['일','월','화','수','목','금','토'];
+
+  function getMonthWeek(dateStr, month){
+    const d = new Date(dateStr+'T12:00:00Z');
+    const day = d.getUTCDate();
+    return parseInt(month.split('-')[1])+'월 '+Math.ceil(day/7)+'주차';
+  }
+
+  const campWeeklyData = {};
+  const allWeeklyMap = {};
+  const dowMap = {0:{imp:0,click:0,cnt:0},1:{imp:0,click:0,cnt:0},2:{imp:0,click:0,cnt:0},
+                  3:{imp:0,click:0,cnt:0},4:{imp:0,click:0,cnt:0},5:{imp:0,click:0,cnt:0},6:{imp:0,click:0,cnt:0}};
+
+  filtered.forEach(c=>{
+    const rd = REPORTS[c.id]; if(!rd||!rd.data) return;
+    if(!campWeeklyData[c.id]) campWeeklyData[c.id]={name:c.campaign||c.id, data:{}};
+    Object.values(rd.data).forEach(prodData=>{
+      Object.entries(prodData||{}).forEach(([dateStr, row])=>{
+        if(selMonth!=='all' && !dateStr.startsWith(selMonth)) return;
+        const imp2 = (row.imp_r!==undefined&&row.imp_r!=='') ? +row.imp_r : +row.imp||0;
+        const clk2 = (row.click_r!==undefined&&row.click_r!=='') ? +row.click_r : +row.click||0;
+        if(!imp2&&!clk2) return;
+        const targetMonth = selMonth!=='all' ? selMonth : dateStr.slice(0,7);
+        const wKey = getMonthWeek(dateStr, targetMonth);
+        if(!campWeeklyData[c.id].data[wKey]) campWeeklyData[c.id].data[wKey]={imp:0,click:0};
+        campWeeklyData[c.id].data[wKey].imp+=imp2;
+        campWeeklyData[c.id].data[wKey].click+=clk2;
+        if(!allWeeklyMap[wKey]) allWeeklyMap[wKey]={imp:0,click:0};
+        allWeeklyMap[wKey].imp+=imp2;
+        allWeeklyMap[wKey].click+=clk2;
+        const d2=new Date(dateStr+'T12:00:00Z');
+        const dow=d2.getUTCDay();
+        dowMap[dow].imp+=imp2; dowMap[dow].click+=clk2; dowMap[dow].cnt+=1;
+      });
+    });
+  });
+
+  function barChart({containerId, labels, datasets, height=200}){
+    const el = document.getElementById(containerId); if(!el) return;
+    const W = el.offsetWidth || el.parentElement?.offsetWidth || el.closest('.mvcard')?.offsetWidth || 700;
+    const padL=52, padR=52, padT=30, padB=52;
+    const chartW = W-padL-padR, chartH = height-padT-padB;
+    const n = labels.length;
+    const groupW = chartW/Math.max(n,1);
+
+    const mainDs = datasets.filter(d=>!d.isCtr&&!d.secondAxis);
+    const secDs  = datasets.filter(d=>!d.isCtr&&d.secondAxis);
+    const ctrDs  = datasets.find(d=>d.isCtr);
+
+    const barCount = mainDs.length + secDs.length;
+    const barW = Math.min(groupW*0.75/Math.max(barCount,1), 36);
+    const gap = (groupW - barW*barCount)/2;
+
+    const maxMain = Math.max(...mainDs.flatMap(d=>d.data), 1);
+    const maxSec  = Math.max(...secDs.flatMap(d=>d.data), 1);
+    const maxCtr  = ctrDs ? Math.max(...ctrDs.data.filter(v=>v>0), 0.01) : 0;
+
+    const ticks = Array.from({length:5},(_,i)=>Math.round(maxMain*i/4));
+
+    let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${W} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // 왼쪽 Y축 (노출수)
+    ticks.forEach(t=>{
+      const y=padT+chartH-(t/maxMain)*chartH;
+      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e8eaf0" stroke-width="1"/>`;
+      svg+=`<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#a8acbe">${t>=10000?Math.round(t/1000)+'K':t}</text>`;
+    });
+
+    // 오른쪽 Y축 (클릭수) — secondAxis 있을 때만
+    if(secDs.length){
+      const secTicks = Array.from({length:5},(_,i)=>Math.round(maxSec*i/4));
+      secTicks.forEach(t=>{
+        const y=padT+chartH-(t/maxSec)*chartH;
+        svg+=`<text x="${W-padR+6}" y="${y+4}" text-anchor="start" font-size="10" fill="#c2255c">${t>=10000?Math.round(t/1000)+'K':t}</text>`;
+      });
+      // 오른쪽 축 라벨
+      svg+=`<text x="${W-padR+6}" y="${padT-10}" font-size="9" fill="#c2255c">클릭↑</text>`;
+    }
+
+    // 막대 그리기
+    let barIdx=0;
+    [...mainDs,...secDs].forEach(ds=>{
+      const isSecond = ds.secondAxis;
+      const maxV = isSecond ? maxSec : maxMain;
+      ds.data.forEach((val,i)=>{
+        const barH = maxV>0?(val/maxV)*chartH:0;
+        const x = padL+i*groupW+gap+barIdx*barW;
+        const y = padT+chartH-barH;
+        svg+=`<rect x="${x}" y="${y}" width="${barW-3}" height="${barH}" rx="3" fill="${ds.color}" opacity="${isSecond?0.7:0.85}"/>`;
+        if(barH>16){
+          const lbl=val>=10000?Math.round(val/1000)+'K':N(val);
+          svg+=`<text x="${x+barW/2-1}" y="${y-4}" text-anchor="middle" font-size="9" fill="${ds.color}" font-weight="700">${lbl}</text>`;
+        }
+      });
+      barIdx++;
+    });
+
+    // CTR 꺾은선
+    if(ctrDs&&maxCtr>0){
+      const pts=ctrDs.data.map((v,i)=>{
+        const x=padL+i*groupW+groupW/2;
+        const y=padT+chartH-(v/maxCtr)*chartH*0.8;
+        return x+','+y;
+      });
+      svg+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${ctrDs.color}" stroke-width="2" stroke-dasharray="4,2"/>`;
+      ctrDs.data.forEach((v,i)=>{
+        const x=padL+i*groupW+groupW/2;
+        const y=padT+chartH-(v/maxCtr)*chartH*0.8;
+        svg+=`<circle cx="${x}" cy="${y}" r="3" fill="${ctrDs.color}"/>`;
+        if(v>0)svg+=`<text x="${x}" y="${y-7}" text-anchor="middle" font-size="9" fill="${ctrDs.color}" font-weight="700">${v.toFixed(2)}%</text>`;
+      });
+    }
+
+    // X축
+    labels.forEach((lbl,i)=>{
+      const x=padL+i*groupW+groupW/2;
+      svg+=`<text x="${x}" y="${padT+chartH+16}" text-anchor="middle" font-size="11" fill="#6b7080" font-weight="600">${lbl}</text>`;
+    });
+
+    // 범례
+    let legX=padL;
+    datasets.forEach(ds=>{
+      if(ds.isCtr){
+        svg+=`<line x1="${legX}" y1="${padT+chartH+38}" x2="${legX+14}" y2="${padT+chartH+38}" stroke="${ds.color}" stroke-width="2" stroke-dasharray="4,2"/>`;
+      } else {
+        svg+=`<rect x="${legX}" y="${padT+chartH+30}" width="10" height="10" rx="2" fill="${ds.color}"/>`;
+      }
+      svg+=`<text x="${legX+18}" y="${padT+chartH+40}" font-size="10" fill="#6b7080">${ds.label}</text>`;
+      legX+=ds.label.length*7+32;
+    });
+
+    svg+='</svg>';
+    el.innerHTML=svg;
+  }
+
+  const allWeekKeys = Object.keys(allWeeklyMap).sort((a,b)=>{
+    const getOrder=s=>{const m=s.match(/(\d+)월 (\d+)주차/);return m?parseInt(m[1])*10+parseInt(m[2]):0;};
+    return getOrder(a)-getOrder(b);
+  });
+  const campList = Object.entries(campWeeklyData);
+  const weeklyChartEl = document.getElementById('weekly-chart');
+
+  // 탭 클릭 시 접근할 수 있도록 외부 변수로 저장
+  window._weeklyChartState = {
+    allWeeklyMap, campWeeklyData, allWeekKeys, campList, weeklyChartEl
+  };
+
+  function renderWeeklyChart(selectedCampId){
+    const state = window._weeklyChartState;
+    const el = state.weeklyChartEl; if(!el) return;
+
+    const tabsWrap = document.createElement('div');
+    tabsWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px';
+    const mkBtn = (label, campId, active)=>{
+      const btn=document.createElement('button');
+      btn.textContent=label;
+      const baseStyle='font-family:var(--fn);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:2px solid;cursor:pointer;';
+      btn.style.cssText=baseStyle+(active&&campId==='all'?'background:#1a1d2e;color:#fff;border-color:#1a1d2e':active?'background:#3b5bdb;color:#fff;border-color:#3b5bdb':'background:#f5f6fa;color:#6b7080;border-color:#e8eaf0');
+      btn.onclick=()=>window._renderWeeklyChart(campId);
+      return btn;
+    };
+    tabsWrap.appendChild(mkBtn('전체','all',selectedCampId==='all'));
+    state.campList.forEach(([id,d])=>tabsWrap.appendChild(mkBtn(d.name.length>10?d.name.slice(0,10)+'…':d.name, id, selectedCampId===id)));
+
+    const innerDiv=document.createElement('div');
+    innerDiv.id='weekly-chart-inner';
+    innerDiv.style.minHeight='40px';
+    el.innerHTML='';
+    el.appendChild(tabsWrap);
+    el.appendChild(innerDiv);
+
+    const dataMap = selectedCampId==='all' ? state.allWeeklyMap : (state.campWeeklyData[selectedCampId]?.data||{});
+    const wEntries = state.allWeekKeys.map(k=>({k,imp:dataMap[k]?.imp||0,click:dataMap[k]?.click||0}));
+    if(!wEntries.length||wEntries.every(e=>!e.imp&&!e.click)){
+      innerDiv.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3)">데이터 없음</div>';
+      return;
+    }
+    const ctrData=wEntries.map(e=>e.imp>0?+(e.click/e.imp*100).toFixed(2):0);
+    requestAnimationFrame(()=>{
+      barChart({containerId:'weekly-chart-inner',labels:wEntries.map(e=>e.k),datasets:[
+        {label:'노출수',data:wEntries.map(e=>e.imp),color:'#3b5bdb'},
+        {label:'클릭수',data:wEntries.map(e=>e.click),color:'#c2255c',secondAxis:true},
+        {label:'CTR',data:ctrData,color:'#2f9e44',isCtr:true}
+      ],height:240});
+    });
+  }
+  window._renderWeeklyChart = renderWeeklyChart;
+  if(!allWeekKeys.length){ if(weeklyChartEl) weeklyChartEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3)">데이터 없음</div>'; }
+  else { renderWeeklyChart('all'); }
+
+  const dowOrder=[1,2,3,4,5,6,0];
+  const DOW_KR2=['일','월','화','수','목','금','토'];
+  const dowLabels=dowOrder.map(d=>DOW_KR2[d]);
+  const dowImpData=dowOrder.map(d=>dowMap[d].cnt>0?Math.round(dowMap[d].imp/dowMap[d].cnt):0);
+  const dowClkData=dowOrder.map(d=>dowMap[d].cnt>0?Math.round(dowMap[d].click/dowMap[d].cnt):0);
+  const dowCtrData=dowOrder.map(d=>dowMap[d].cnt>0&&dowMap[d].imp>0?+(dowMap[d].click/dowMap[d].imp*100).toFixed(2):0);
+  const dt=document.getElementById('dow-chart');
+  if(dowImpData.every(v=>v===0)){ if(dt)dt.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3)">데이터 없음</div>'; }
+  else{ requestAnimationFrame(()=>{ barChart({containerId:'dow-chart',labels:dowLabels,datasets:[
+    {label:'평균 노출수',data:dowImpData,color:'#3b5bdb'},
+    {label:'평균 클릭수',data:dowClkData,color:'#c2255c',secondAxis:true},
+    {label:'CTR',data:dowCtrData,color:'#2f9e44',isCtr:true}
+  ],height:240}); }); }
+
+  // ── 전환율 ──
+  const card = document.getElementById('conversion-card');
+  const allInq = (typeof INQUIRIES!=='undefined' ? INQUIRIES : []);
+  const monthInq = selMonth==='all' ? allInq : allInq.filter(i=>{
+    const d = i.created ? new Date(i.created).toISOString().slice(0,7) : '';
+    return d===selMonth;
+  });
+  const total = monthInq.length;
+  const confirmed = monthInq.filter(i=>i.status==='confirmed').length;
+  const cancelled = monthInq.filter(i=>i.status==='cancelled').length;
+  const pending = total - confirmed - cancelled;
+  const convRate = total>0 ? (confirmed/total*100).toFixed(1) : '0.0';
+  const cancelRate = total>0 ? (cancelled/total*100).toFixed(1) : '0.0';
+
+  card.innerHTML = total===0
+    ? '<div style="text-align:center;padding:20px;color:var(--t3)">해당 기간 문의 없음</div>'
+    : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:16px;margin-bottom:16px">
+        <div style="text-align:center"><div style="font-size:11px;color:var(--t2);margin-bottom:6px">전체 문의</div><div style="font-size:24px;font-weight:800">${total}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--t2);margin-bottom:6px">확정</div><div style="font-size:24px;font-weight:800;color:var(--blu)">${confirmed}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--t2);margin-bottom:6px">미정</div><div style="font-size:24px;font-weight:800;color:var(--amb)">${pending}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--t2);margin-bottom:6px">캔슬</div><div style="font-size:24px;font-weight:800;color:#c92a2a">${cancelled}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--t2);margin-bottom:6px">전환율</div><div style="font-size:24px;font-weight:800;color:var(--grn)">${convRate}%</div></div>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--r);height:10px;overflow:hidden;display:flex">
+        <div style="background:var(--blu);width:${convRate}%;transition:width .4s"></div>
+        <div style="background:#f1f3f5;flex:1"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--blu);display:inline-block"></span>확정 ${convRate}%</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#f1f3f5;border:1px solid #dee2e6;display:inline-block"></span>미정</span>
+      </div>`;
 }
 
 // ════════════════════════════════════
@@ -2599,7 +2854,9 @@ function renderCalendar(){
       const posCls  = isSolo ? 'ev-solo' : (isStart||dow===0) ? 'ev-start' : isEnd ? 'ev-end' : 'ev-mid';
       const statusCls = e.isSponsor
         ? (e.status==='confirmed' ? 'ev-sponsor-confirmed' : 'ev-sponsor-pending')
-        : (e.status==='confirmed' ? 'ev-confirmed' : 'ev-pending');
+        : (e.status==='confirmed' ? 'ev-confirmed' : e.status==='cancelled' ? 'ev-cancelled' : 'ev-pending');
+      // 캔슬된 건은 캘린더에서 숨김
+      if(e.status==='cancelled') return;
       const label = isRowStart ? e.label : '&nbsp;';
       // 스폰서십 id에서 기간 인덱스 제거해서 원본 id 추출
       const spBaseId = e.isSponsor ? (e.spId||'') : '';
@@ -2693,6 +2950,10 @@ window.setInqStatus = function(s){
   inqEditStatus = s;
   document.getElementById('inq-st-pending').className = s==='pending' ? 'active-pending' : 'inactive';
   document.getElementById('inq-st-confirmed').className = s==='confirmed' ? 'active-confirmed' : 'inactive';
+  document.getElementById('inq-st-cancelled').className = s==='cancelled' ? 'active-cancelled' : 'inactive';
+  // 캔슬 사유 필드 표시/숨김
+  const cancelSection = document.getElementById('cancel-reason-section');
+  if(cancelSection) cancelSection.style.display = s==='cancelled' ? '' : 'none';
 };
 
 window.openInquiryModal = function(id){
@@ -2824,14 +3085,27 @@ window.deleteInquiry = async function(id){
 window.toggleInquiryStatus = async function(id){
   const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
   const wasConfirmed = inq.status === 'confirmed';
+  const wasCancelled = inq.status === 'cancelled';
   const prevConfirmedAt = inq.confirmedAt || null;
+
+  // 캔슬 → 미정으로 되돌리기
+  if(wasCancelled){
+    inq.status = 'pending';
+    inq.cancelReason = '';
+    inq.cancelledAt = null;
+    inq.updated = Date.now();
+    await set(ref(db,'inquiries'), INQUIRIES);
+    showToast('미정으로 변경되었습니다');
+    renderInquiryList();
+    return;
+  }
+
   inq.status = wasConfirmed ? 'pending' : 'confirmed';
-  inq.confirmedAt = wasConfirmed ? null : Date.now(); // 확정된 "시점"(주)을 별도 기록 — 문의 접수 주와 달라도 추적 가능
+  inq.confirmedAt = wasConfirmed ? null : Date.now();
   inq.updated = Date.now();
   await set(ref(db,'inquiries'), INQUIRIES);
 
   if(inq.status === 'confirmed'){
-    // 이미 연결된 캠페인이 있으면 생성 안 함
     const already = CAMPS.find(c=>c.inqId===id);
     if(!already){
       const campId = 'c_'+Date.now();
@@ -2851,7 +3125,6 @@ window.toggleInquiryStatus = async function(id){
         created: Date.now()
       };
       CAMPS.push(newCamp);
-      // 리포트 데이터 - 문의 모든 필드 포함
       const rd = {cfg:{
         client:newCamp.client, campaign:newCamp.campaign, agency:newCamp.agency,
         start:newCamp.start, end:newCamp.end,
@@ -2862,7 +3135,6 @@ window.toggleInquiryStatus = async function(id){
       products.forEach(p=>rd.data[p]={});
       REPORTS[campId] = rd;
       inq.campId = campId;
-      // 한번에 저장 (순서 보장)
       await Promise.all([
         saveRD(campId, rd),
         set(ref(db,'campaigns'), CAMPS),
@@ -2875,7 +3147,6 @@ window.toggleInquiryStatus = async function(id){
       showToast('확정으로 변경 (캠페인 이미 존재)');
     }
   } else {
-    // 미정으로 되돌릴 때: 연결 캠페인 삭제 여부 확인
     const linked = CAMPS.find(c=>c.inqId===id);
     if(linked){
       if(confirm(`미정으로 변경하면 연결된 캠페인 "${linked.campaign}"도 삭제됩니다. 계속하시겠습니까?`)){
@@ -2888,7 +3159,6 @@ window.toggleInquiryStatus = async function(id){
         showToast('미정으로 변경 — 캠페인이 삭제되었습니다');
         if(curView==='list') renderAll();
       } else {
-        // 취소 시 상태 되돌리기
         inq.status = 'confirmed';
         inq.confirmedAt = prevConfirmedAt || Date.now();
         await set(ref(db,'inquiries'), INQUIRIES);
@@ -2898,9 +3168,35 @@ window.toggleInquiryStatus = async function(id){
     }
   }
   renderInquiryList();
-  if(curView==='calendar') renderCalendar();
 };
 
+// 캔슬 처리 (별도 함수 — 사유 입력 모달 후 처리)
+window.cancelInquiry = async function(id){
+  const inq = INQUIRIES.find(q=>q.id===id); if(!inq) return;
+  const reason = prompt('캔슬 사유를 입력하세요 (선택사항):','') ;
+  if(reason === null) return; // 취소 누름
+
+  // 연결된 캠페인 삭제
+  const linked = CAMPS.find(c=>c.inqId===id);
+  if(linked){
+    if(!confirm(`연결된 캠페인 "${linked.campaign}"도 함께 삭제됩니다. 계속하시겠습니까?`)) return;
+    CAMPS = CAMPS.filter(c=>c.inqId!==id);
+    delete REPORTS[linked.id];
+    await saveCamps(CAMPS);
+    await remove(ref(db,'reports/'+linked.id));
+    if(curView==='list') renderAll();
+  }
+
+  inq.status = 'cancelled';
+  inq.cancelReason = reason||'';
+  inq.cancelledAt = Date.now();
+  inq.confirmedAt = null;
+  inq.campId = null;
+  inq.updated = Date.now();
+  await set(ref(db,'inquiries'), INQUIRIES);
+  showToast('캔슬 처리되었습니다');
+  renderInquiryList();
+};
 function getWeekLabel(ts){
   if(!ts) return '날짜 미상';
   const d = new Date(ts);
@@ -2966,9 +3262,10 @@ function renderInquiryList(){
   const weekGroups=[{label:'',ts:0,items:list}]; // 선택된 주 내에선 그룹 없이 단순 목록
 
   const cardHtml = (inq) => {
-    const statusLabel = inq.status==='confirmed' ? '확정' : '미정';
-    const statusCls   = inq.status==='confirmed' ? 'confirmed' : 'pending';
-    const cardCls     = inq.status==='confirmed' ? 'inq-card confirmed' : 'inq-card pending';
+    const isCancelled = inq.status==='cancelled';
+    const statusLabel = inq.status==='confirmed' ? '확정' : isCancelled ? '캔슬' : '미정';
+    const statusCls   = inq.status==='confirmed' ? 'confirmed' : isCancelled ? 'cancelled' : 'pending';
+    const cardCls     = inq.status==='confirmed' ? 'inq-card confirmed' : isCancelled ? 'inq-card' : 'inq-card pending';
     const rawBudget = inq.budget ? inq.budget.toString().replace(/[^0-9]/g,'') : '';
     const budget = rawBudget ? Number(rawBudget).toLocaleString('ko-KR')+'원' : '';
     const period = (inq.start&&inq.end) ? inq.start+' ~ '+inq.end : '';
@@ -2977,12 +3274,12 @@ function renderInquiryList(){
     const bsPeriod = bsPeriodsArr.filter(p=>p.start).map(p=>p.start+' ~ '+p.end).join(' · ');
     const contactStr = [inq.contact, inq.email].filter(Boolean).join(' · ');
     const prods = (inq.products||[]).length ? (inq.products||[]).join(', ') : '';
-    // 접수일 / 확정일을 카드에 항상 명시 — 같은 건이 접수 주와 확정 주 양쪽에 보여도
-    // 날짜를 보면 "같은 건이 두 시점에 걸쳐 있는 것"임을 바로 알 수 있게 함 (중복 등록으로 오인 방지)
     const fmtDate = ts => { if(!ts) return ''; const d=new Date(ts); return (d.getMonth()+1)+'/'+d.getDate(); };
     const dateTrail = '<span style="color:var(--t3)">접수 '+fmtDate(inq.created)+'</span>'
-      + (inq.status==='confirmed' && inq.confirmedAt ? '<span style="color:var(--blu);font-weight:700"> → 확정 '+fmtDate(inq.confirmedAt)+'</span>' : '');
-    return '<div class="'+cardCls+'">'
+      + (inq.status==='confirmed' && inq.confirmedAt ? '<span style="color:var(--blu);font-weight:700"> → 확정 '+fmtDate(inq.confirmedAt)+'</span>' : '')
+      + (isCancelled && inq.cancelledAt ? '<span style="color:#c92a2a;font-weight:700"> → 캔슬 '+fmtDate(inq.cancelledAt)+'</span>' : '');
+    const cancelledStyle = isCancelled ? 'opacity:.6;' : '';
+    return '<div class="'+cardCls+'" style="'+cancelledStyle+'">'
       +'<div class="inq-card-body">'
       +'<div class="inq-title">'
       +(inq.client||'(광고주 없음)')
@@ -3000,14 +3297,19 @@ function renderInquiryList(){
       +'</div>'
       +((inq.push_dates&&inq.push_dates.length) ? '<div style="font-size:11px;color:#7048e8;margin-top:4px">앱푸시: '+inq.push_dates.join(', ')+'</div>' : '')
       +(inq.note ? '<div class="inq-note">'+inq.note+'</div>' : '')
+      +(isCancelled && inq.cancelReason ? '<div style="font-size:11px;color:#c92a2a;margin-top:5px;padding:5px 8px;background:#fff5f5;border-radius:4px;border:1px solid #ffa8a8">캔슬 사유: '+inq.cancelReason+'</div>' : '')
       +'</div>'
       +'<div class="inq-actions">'
-      +'<button class="btn btn-sm" data-iid="'+inq.id+'" onclick="toggleInquiryStatus(this.dataset.iid)" style="font-size:10px">'+(inq.status==='confirmed'?'미정으로':'확정')+'</button>'
+      +(isCancelled
+        ? '<button class="btn btn-sm" data-iid="'+inq.id+'" onclick="toggleInquiryStatus(this.dataset.iid)" style="font-size:10px">미정으로</button>'
+        : '<button class="btn btn-sm" data-iid="'+inq.id+'" onclick="toggleInquiryStatus(this.dataset.iid)" style="font-size:10px">'+(inq.status==='confirmed'?'미정으로':'확정')+'</button>'
+          +'<button class="btn btn-sm" data-iid="'+inq.id+'" onclick="cancelInquiry(this.dataset.iid)" style="font-size:10px;color:#c92a2a;border-color:#ffa8a8">캔슬</button>'
+      )
       +'<button class="btn-icon" data-iid="'+inq.id+'" onclick="openInquiryModal(this.dataset.iid)">✏️</button>'
       +'<button class="btn-icon del" data-iid="'+inq.id+'" onclick="deleteInquiry(this.dataset.iid)">🗑</button>'
       +'</div>'
       +'</div>';
-  };
+  };;
 
   el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'+list.map(cardHtml).join('')+'</div>';
 }
