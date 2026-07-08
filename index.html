@@ -1965,7 +1965,7 @@ function renderChecklist(){
     const val = cl[item.key]||'not-started';
     return `<div class="cl-item">
       <span class="cl-label">${item.label}</span>
-      <select class="cl-sel ${clClass(val)}" onchange="updateChecklist('${item.key}',this.value);this.className='cl-sel '+clClass(this.value)">
+      <select class="cl-sel ${clClass(val)}" onchange="updateChecklist('${curCampId}','${item.key}',this.value);this.className='cl-sel '+clClass(this.value)">
         <option value="not-started"${val==='not-started'?' selected':''}>Not Started</option>
         <option value="in-progress"${val==='in-progress'?' selected':''}>In Progress</option>
         <option value="done"${val==='done'?' selected':''}>Done</option>
@@ -1974,14 +1974,20 @@ function renderChecklist(){
   }).join('');
 }
 
-window.updateChecklist = async function(key, val){
-  if(!curRD) return;
-  if(!curRD.cfg.checklist) curRD.cfg.checklist={};
-  curRD.cfg.checklist[key] = val;
-  await saveRD(curCampId, curRD);
-  // 캠페인 목록에도 반영
-  const i = CAMPS.findIndex(c=>c.id===curCampId);
-  if(i>=0){ CAMPS[i].checklist = curRD.cfg.checklist; await saveCamps(CAMPS); }
+window.updateChecklist = async function(campId, key, val){
+  // campId를 직접 받아서 처리 (목록/리포트 양쪽에서 동작)
+  const rd = REPORTS[campId] || loadRD(campId);
+  if(!rd) return;
+  if(!rd.cfg) rd.cfg={};
+  if(!rd.cfg.checklist) rd.cfg.checklist={};
+  rd.cfg.checklist[key] = val;
+  REPORTS[campId] = rd;
+  await saveRD(campId, rd);
+  // CAMPS에도 반영
+  const i = CAMPS.findIndex(c=>c.id===campId);
+  if(i>=0){ CAMPS[i].checklist = rd.cfg.checklist; await saveCamps(CAMPS); }
+  // 현재 열려있는 리포트면 체크리스트 UI도 갱신
+  if(curCampId===campId && curRD){ curRD.cfg.checklist=rd.cfg.checklist; renderChecklist(); }
 };
 
 function fillRSetup(){
