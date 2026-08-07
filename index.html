@@ -816,10 +816,15 @@ tr.sumr td.rc .ci{color:#fcc2d7}
         </div>
         <div id="token-list"></div>
       </div>
-      <div class="stg-sec">
+    <div class="stg-sec">
         <div class="stg-title">데이터 백업</div>
         <div class="stg-sub">Firebase에 저장된 전체 데이터를 JSON으로 내보낼 수 있습니다.</div>
         <button class="btn" onclick="exportAll()">전체 데이터 내보내기 (JSON)</button>
+      </div>
+      <div class="stg-sec">
+        <div class="stg-title">문의 → 캠페인 복구</div>
+        <div class="stg-sub">"확정"으로 표시됐지만 캠페인이 생성되지 않은 문의를 찾아 자동으로 캠페인을 만들고 Firebase에 저장합니다.</div>
+        <button class="btn btn-p" onclick="repairMissingCampaigns()">누락된 캠페인 복구</button>
       </div>
     </div>
   </div>
@@ -3577,6 +3582,62 @@ window.deleteInquiry = async function(id){
   await set(ref(db,'inquiries'), INQUIRIES);
   showToast('삭제되었습니다');
   renderInquiryList();
+};
+
+window.repairMissingCampaigns = async function(){
+  const missing = INQUIRIES.filter(inq =>
+    inq.status === 'confirmed' && !CAMPS.some(c => c.inqId === inq.id)
+  );
+  if(!missing.length){ showToast('누락된 캠페인이 없습니다'); return; }
+
+  const newCampIds = [];
+  missing.forEach(inq => {
+    const campId = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    const products = inq.products || [];
+    const newCamp = {
+      id: campId,
+      client: inq.client || '',
+      agency: inq.agency || '',
+      campaign: inq.campaign || [inq.client, inq.agency].filter(Boolean).join(' · ') || '광고 캠페인',
+      start: inq.start || '',
+      end: inq.end || '',
+      products,
+      budget: inq.budget || '',
+      contact: inq.contact || '',
+      email: inq.email || '',
+      inqId: inq.id,
+      created: Date.now()
+    };
+    CAMPS.push(newCamp);
+    const rd = {
+      cfg: {
+        client: newCamp.client, campaign: newCamp.campaign, agency: newCamp.agency,
+        start: newCamp.start, end: newCamp.end, budget: inq.budget || '',
+        contact: inq.contact || '', email: inq.email || '',
+        product_periods: inq.product_periods || [],
+        bs_periods: inq.bs_periods || [], bs_start: inq.bs_start || '', bs_end: inq.bs_end || ''
+      },
+      products, data: {}
+    };
+    products.forEach(p => rd.data[p] = {});
+    REPORTS[campId] = rd;
+    inq.campId = campId;
+    newCampIds.push(campId);
+  });
+
+  try {
+    await Promise.all([
+      set(ref(db,'campaigns'), CAMPS),
+      set(ref(db,'inquiries'), INQUIRIES),
+      ...newCampIds.map(id => saveRD(id, REPORTS[id]))
+    ]);
+    showToast(`${missing.length}건 복구 완료 — 캠페인이 생성됐습니다`);
+    renderAll();
+    if(curView==='settings') renderTokenList();
+  } catch(e){
+    console.error('repairMissingCampaigns error:', e);
+    showToast('복구 중 오류가 발생했습니다: ' + e.message);
+  }
 };
 
 window.toggleInquiryStatus = async function(id){
