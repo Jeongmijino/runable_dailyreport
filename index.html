@@ -373,6 +373,55 @@ tr.sumr td.rc .ci{color:#fcc2d7}
 .inv-btn:hover{background:var(--inv-bg)}
 .inv-btn.danger{color:#c92a2a;border-color:#ffc9c9;background:#fff5f5}
 .inv-btn.danger:hover{background:#ffe3e3}
+/* 인벤토리 - 탭 전환 */
+.inv-tabbar{display:flex;gap:6px;padding:14px 28px 0}
+.inv-tab-btn{font-family:var(--fn);font-size:12px;font-weight:600;padding:7px 16px;border-radius:8px;border:1px solid var(--inv-border);background:var(--inv-white);color:var(--inv-t2);cursor:pointer;transition:all .12s}
+.inv-tab-btn:hover{background:var(--inv-bg)}
+.inv-tab-btn.on{background:var(--inv-primary);border-color:var(--inv-primary);color:#fff}
+/* 인벤토리 - 상품 타임라인 */
+.itl-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.itl-nav{display:flex;align-items:center;gap:8px}
+.itl-nav button{font-family:var(--fn);font-size:12px;font-weight:600;padding:0 10px;height:30px;border:1px solid var(--inv-border);border-radius:8px;background:var(--inv-white);color:var(--inv-t1);cursor:pointer}
+.itl-nav button:hover{background:var(--inv-bg)}
+.itl-label{font-family:var(--inv-fn-head);font-size:15px;font-weight:500;color:var(--inv-t1);min-width:100px;text-align:center}
+.itl-legend{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap}
+.itl-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--inv-t3)}
+.itl-legend-dot{width:9px;height:9px;border-radius:3px}
+.itl-outer{border:1px solid var(--inv-border);border-radius:10px;overflow:hidden}
+.itl-scroll{overflow-x:auto}
+.itl-grid{position:relative;min-width:max-content}
+.itl-head{display:flex;position:sticky;top:0;z-index:3;background:var(--inv-white);border-bottom:1px solid var(--inv-border)}
+.itl-head-side{flex-shrink:0;width:190px;border-right:1px solid var(--inv-border);background:var(--inv-white);position:sticky;left:0;z-index:4}
+.itl-daywrap{display:grid}
+.itl-daycol{text-align:center;font-size:10px;font-weight:700;color:var(--inv-t3);padding:8px 0;border-right:1px solid var(--inv-border)}
+.itl-daycol.we{background:var(--inv-bg)}
+.itl-daycol.today{color:var(--inv-primary);background:var(--inv-primary-bg)}
+.itl-daycol .dow{display:block;font-size:8px;font-weight:600;color:var(--inv-t4);margin-top:1px}
+.itl-today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--inv-red);z-index:2;pointer-events:none}
+.itl-group{border-bottom:1px solid var(--inv-border);display:flex}
+.itl-group:last-child{border-bottom:none}
+.itl-group-side{flex-shrink:0;width:190px;border-right:1px solid var(--inv-border);background:var(--inv-bg);position:sticky;left:0;z-index:1;padding:10px 12px;font-size:12px;font-weight:700;color:var(--inv-t1);display:flex;align-items:center;gap:6px}
+.itl-group-ct{font-size:9px;font-weight:700;color:var(--inv-t3);background:var(--inv-white);border:1px solid var(--inv-border);border-radius:20px;padding:1px 6px;margin-left:auto}
+.itl-group-lanes{flex:1;display:flex;flex-direction:column}
+.itl-lane{position:relative;display:grid;min-height:32px;border-top:1px solid #f1f3f9}
+.itl-lane:first-child{border-top:none}
+.itl-daycolbg{border-right:1px solid var(--inv-border)}
+.itl-daycolbg.we{background:var(--inv-bg)}
+.itl-bar{grid-row:1;align-self:center;margin:3px 2px;border-radius:6px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;z-index:1;height:26px}
+.itl-bar:hover{filter:brightness(.96)}
+.itl-bar .cli{opacity:.75;font-weight:500;margin-left:4px}
+.itl-bar.live{background:var(--inv-primary-bg);color:var(--inv-primary)}
+.itl-bar.upcoming{background:var(--inv-amber-bg);color:#b5690a}
+.itl-bar.past{background:var(--inv-bg);color:var(--inv-t3)}
+.itl-empty-row{padding:0 12px;color:var(--inv-t3);font-size:11px;display:flex;align-items:center;min-height:32px}
+/* 설정 - 상품 순서 편집 */
+.pord-list{display:flex;flex-direction:column;gap:6px}
+.pord-row{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:7px 12px}
+.pord-name{flex:1;font-size:12px;font-weight:600;color:var(--t1)}
+.pord-btns{display:flex;gap:4px}
+.pord-btns button{font-family:var(--fn);width:24px;height:24px;border:1px solid var(--bdr2);border-radius:5px;background:#fff;color:var(--t2);cursor:pointer;font-size:11px;line-height:1}
+.pord-btns button:hover{background:var(--bg)}
+.pord-btns button:disabled{opacity:.3;cursor:default}
 </style>
 </head>
 <body>
@@ -678,42 +727,71 @@ tr.sumr td.rc .ci{color:#fcc2d7}
       <div class="inv-title">인벤토리</div>
     </div>
     <div class="inv-breadcrumb">🏠 &nbsp;/&nbsp; <b>인벤토리</b></div>
-    <div class="inv-body-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-        <div class="inv-body-card-title" style="margin-bottom:0">바텀시트 캘린더</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button onclick="openSponsorModal()" style="font-family:var(--fn);font-size:11px;font-weight:700;padding:0 14px;height:34px;border-radius:8px;border:none;background:#9c36b5;color:#fff;cursor:pointer">+ 스폰서십 추가</button>
-          <select id="cal-status-filter" onchange="renderCalendar()" style="font-family:var(--fn);font-size:11px;padding:0 10px;border:1px solid var(--inv-border);border-radius:8px;background:var(--inv-white);color:var(--inv-t1);height:34px;cursor:pointer">
-            <option value="all">전체</option>
-            <option value="confirmed">확정만</option>
-            <option value="pending">미정만</option>
-          </select>
+    <div class="inv-tabbar">
+      <button class="inv-tab-btn on" id="inv-tab-btn-cal" onclick="invSetTab('cal')">바텀시트 캘린더</button>
+      <button class="inv-tab-btn" id="inv-tab-btn-tl" onclick="invSetTab('timeline')">상품 타임라인</button>
+    </div>
+    <div id="inv-tab-cal">
+      <div class="inv-body-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div class="inv-body-card-title" style="margin-bottom:0">바텀시트 캘린더</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button onclick="openSponsorModal()" style="font-family:var(--fn);font-size:11px;font-weight:700;padding:0 14px;height:34px;border-radius:8px;border:none;background:#9c36b5;color:#fff;cursor:pointer">+ 스폰서십 추가</button>
+            <select id="cal-status-filter" onchange="renderCalendar()" style="font-family:var(--fn);font-size:11px;padding:0 10px;border:1px solid var(--inv-border);border-radius:8px;background:var(--inv-white);color:var(--inv-t1);height:34px;cursor:pointer">
+              <option value="all">전체</option>
+              <option value="confirmed">확정만</option>
+              <option value="pending">미정만</option>
+            </select>
+          </div>
+        </div>
+        <div class="cal-header" style="margin-bottom:12px">
+          <div class="cal-nav">
+            <button onclick="calPrevMonth()">‹</button>
+            <div class="cal-month-label" id="cal-month-label"></div>
+            <button onclick="calNextMonth()">›</button>
+            <button onclick="calToday()" style="margin-left:4px;font-size:11px">오늘</button>
+          </div>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-dow-row">
+            <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+            <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+          </div>
+          <div class="cal-days" id="cal-days"></div>
+        </div>
+        <div class="cal-legend">
+          <div class="cal-legend-item"><div class="cal-legend-dot confirmed"></div> 광고 확정</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot pending"></div> 광고 미정</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f3d9fa;border:1px solid #cc5de8"></div> 스폰서십</div>
         </div>
       </div>
-      <div class="cal-header" style="margin-bottom:12px">
-        <div class="cal-nav">
-          <button onclick="calPrevMonth()">‹</button>
-          <div class="cal-month-label" id="cal-month-label"></div>
-          <button onclick="calNextMonth()">›</button>
-          <button onclick="calToday()" style="margin-left:4px;font-size:11px">오늘</button>
-        </div>
-      </div>
-      <div class="cal-grid">
-        <div class="cal-dow-row">
-          <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
-          <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
-        </div>
-        <div class="cal-days" id="cal-days"></div>
-      </div>
-      <div class="cal-legend">
-        <div class="cal-legend-item"><div class="cal-legend-dot confirmed"></div> 광고 확정</div>
-        <div class="cal-legend-item"><div class="cal-legend-dot pending"></div> 광고 미정</div>
-        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f3d9fa;border:1px solid #cc5de8"></div> 스폰서십</div>
+      <div class="inv-body-card" style="margin-top:-8px">
+        <div class="inv-body-card-title">스폰서십 목록</div>
+        <div id="sponsor-list-wrap"><div id="sponsor-list"></div></div>
       </div>
     </div>
-    <div class="inv-body-card" style="margin-top:-8px">
-      <div class="inv-body-card-title">스폰서십 목록</div>
-      <div id="sponsor-list-wrap"><div id="sponsor-list"></div></div>
+    <div id="inv-tab-timeline" style="display:none">
+      <div class="inv-body-card">
+        <div class="inv-body-card-title">상품 타임라인</div>
+        <div class="itl-toolbar">
+          <div class="itl-nav">
+            <button onclick="tlPrevMonth()">‹</button>
+            <div class="itl-label" id="tl-month-label"></div>
+            <button onclick="tlNextMonth()">›</button>
+            <button onclick="tlToday()" style="margin-left:2px">오늘</button>
+          </div>
+          <div class="itl-legend">
+            <div class="itl-legend-item"><div class="itl-legend-dot" style="background:var(--inv-primary)"></div> 진행중</div>
+            <div class="itl-legend-item"><div class="itl-legend-dot" style="background:#e8a33d"></div> 예정</div>
+            <div class="itl-legend-item"><div class="itl-legend-dot" style="background:var(--inv-t4)"></div> 종료</div>
+          </div>
+        </div>
+        <div class="itl-outer">
+          <div class="itl-scroll">
+            <div class="itl-grid" id="tl-grid"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -805,6 +883,11 @@ tr.sumr td.rc .ci{color:#fcc2d7}
           <input type="text" id="thr-new-val" placeholder="기준 %" style="width:80px;font-family:var(--fn);font-size:12px;padding:0 9px;border:1px solid var(--bdr2);border-radius:var(--r);height:30px">
           <button class="btn btn-sm btn-p" onclick="thrAdd()">+ 추가</button>
         </div>
+      </div>
+      <div class="stg-sec">
+        <div class="stg-title">상품 타임라인 순서</div>
+        <div class="stg-sub">'인벤토리 &gt; 상품 타임라인'에서 상품 그룹이 표시되는 순서입니다. 화살표로 순서를 바꾸면 실시간으로 저장됩니다.</div>
+        <div class="pord-list" id="pord-list"></div>
       </div>
       <div class="stg-sec">
         <div class="stg-title">공유 코드 관리</div>
@@ -1026,6 +1109,8 @@ let THR = {};     // { [productName]: threshold }
 
 let INQUIRIES = []; // 광고 문의 목록
 let SPONSORS = [];  // 스폰서십 바텀시트
+let PRODORDER = []; // 상품 타임라인 그룹 정렬 순서
+let invCalTab = 'cal'; // 인벤토리 페이지 내부 탭 (cal | timeline)
 let selMonth = 'all';
 let curView = 'list';
 let curCampId = null;
@@ -1237,6 +1322,7 @@ function startListeners(){
     if(dbReady && curView==='monthly') renderMonthly();
     if(dbReady && curView==='dashboard') renderDashboard();
     if(dbReady && curView==='agencylist') renderAgencyList();
+    if(dbReady && curView==='calendar' && invCalTab==='timeline') renderTimeline();
     setSyncStatus(true);
   }, ()=>setSyncStatus(false));
 
@@ -1311,6 +1397,30 @@ function startListeners(){
     if(dbReady && curView==='settings'){ renderSettings(); renderTokenList(); }
     setSyncStatus(true);
   }, ()=>setSyncStatus(false));
+
+  // Product order (상품 타임라인 그룹 순서)
+  onValue(ref(db,'productOrder'), snap=>{
+    const raw = snap.val();
+    PRODORDER = Array.isArray(raw) ? raw.filter(Boolean) : (raw ? Object.values(raw).filter(Boolean) : []);
+    if(!PRODORDER.length){ PRODORDER = FIXED_PRODUCTS.slice(); }
+    if(dbReady && curView==='settings') renderProductOrder();
+    if(dbReady && curView==='calendar' && invCalTab==='timeline') renderTimeline();
+  }, ()=>{});
+}
+
+async function saveProductOrder(arr){
+  PRODORDER = arr;
+  await set(ref(db,'productOrder'), arr);
+}
+
+// 전체 그룹 목록: 저장된 순서 + CAMPS에 있지만 목록에 없는 상품(뒤에 자동 추가)
+function getOrderedProductList(){
+  const base = PRODORDER.length ? PRODORDER.slice() : FIXED_PRODUCTS.slice();
+  const seen = new Set(base);
+  CAMPS.forEach(c=>{
+    (c.products||[]).forEach(p=>{ if(!seen.has(p)){ seen.add(p); base.push(p); } });
+  });
+  return base;
 }
 
 // ════════════════════════════════════
@@ -1899,7 +2009,16 @@ function renderSponsorList(){
   }).join('');
 }
 
-window.gotoCalendar=function(){ showView('calendar'); renderSidebar(); renderCalendar(); renderSponsorList(); renderInvSummary(); };
+window.gotoCalendar=function(){ showView('calendar'); renderSidebar(); renderCalendar(); renderSponsorList(); renderInvSummary(); invSetTab(invCalTab); };
+
+window.invSetTab=function(tab){
+  invCalTab = tab;
+  document.getElementById('inv-tab-btn-cal').className = 'inv-tab-btn'+(tab==='cal'?' on':'');
+  document.getElementById('inv-tab-btn-tl').className = 'inv-tab-btn'+(tab==='timeline'?' on':'');
+  document.getElementById('inv-tab-cal').style.display = tab==='cal' ? '' : 'none';
+  document.getElementById('inv-tab-timeline').style.display = tab==='timeline' ? '' : 'none';
+  if(tab==='timeline') renderTimeline();
+};
 
 function renderInvSummary(){
   const el = document.getElementById('inv-summary-row'); if(!el) return;
@@ -2812,7 +2931,31 @@ window.onCell=function(p,d,f,v){
 // ════════════════════════════════════
 //  SETTINGS
 // ════════════════════════════════════
+function renderProductOrder(){
+  const el=document.getElementById('pord-list');
+  if(!el) return;
+  const list = getOrderedProductList();
+  el.innerHTML = list.map((p,i)=>`
+    <div class="pord-row">
+      <div class="pord-name">${i+1}. ${p}</div>
+      <div class="pord-btns">
+        <button ${i===0?'disabled':''} onclick="pordMove(${i},-1)" title="위로">↑</button>
+        <button ${i===list.length-1?'disabled':''} onclick="pordMove(${i},1)" title="아래로">↓</button>
+      </div>
+    </div>`).join('');
+}
+window.pordMove=function(i,dir){
+  const list = getOrderedProductList();
+  const j = i+dir;
+  if(j<0||j>=list.length) return;
+  [list[i],list[j]] = [list[j],list[i]];
+  saveProductOrder(list);
+  renderProductOrder();
+  if(curView==='calendar' && invCalTab==='timeline') renderTimeline();
+};
+
 function renderSettings(){
+  renderProductOrder();
   const el=document.getElementById('thr-grid');
   const entries=Object.entries(THR);
   if(!entries.length){el.innerHTML='<div style="font-size:12px;color:var(--t3)">아래에서 추가하세요</div>';return;}
@@ -3359,6 +3502,97 @@ function renderCalendar(){
     html2 += '<div class="'+cls+'">'+dayNumHtml+evHtml+'</div>';
   }
   grid.innerHTML = html2;
+}
+
+// ════════════════════════════════════
+//  TIMELINE — 상품 타임라인 (인벤토리)
+// ════════════════════════════════════
+let tlYear = new Date().getFullYear();
+let tlMonth = new Date().getMonth(); // 0-based
+
+window.tlPrevMonth=function(){ tlMonth--; if(tlMonth<0){tlMonth=11;tlYear--;} renderTimeline(); };
+window.tlNextMonth=function(){ tlMonth++; if(tlMonth>11){tlMonth=0;tlYear++;} renderTimeline(); };
+window.tlToday=function(){ const t=new Date(); tlYear=t.getFullYear(); tlMonth=t.getMonth(); renderTimeline(); };
+
+function tlYmd(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+function renderTimeline(){
+  const grid = document.getElementById('tl-grid');
+  if(!grid) return;
+  const lbl = document.getElementById('tl-month-label');
+  if(lbl) lbl.textContent = `${tlYear}년 ${tlMonth+1}월`;
+
+  const COLW = 32; // px per day
+  const SIDEW = 190;
+  const numDays = new Date(tlYear, tlMonth+1, 0).getDate();
+  const monthStart = tlYmd(tlYear, tlMonth, 1);
+  const monthEnd = tlYmd(tlYear, tlMonth, numDays);
+  const now = new Date();
+  const todayStr = tlYmd(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayIdxInMonth = (now.getFullYear()===tlYear && now.getMonth()===tlMonth) ? now.getDate() : -1; // 1-based day, -1 if not this month
+  const gridColsStyle = `grid-template-columns:repeat(${numDays},${COLW}px)`;
+
+  // 헤더 (날짜)
+  let dayHtml = '';
+  for(let d=1; d<=numDays; d++){
+    const dow = new Date(tlYear, tlMonth, d).getDay();
+    const isToday = d===todayIdxInMonth;
+    const cls = ['itl-daycol', (dow===0||dow===6)?'we':'', isToday?'today':''].filter(Boolean).join(' ');
+    dayHtml += `<div class="${cls}" style="width:${COLW}px">${d}<span class="dow">${DOW[dow]}</span></div>`;
+  }
+  let html = `<div class="itl-head"><div class="itl-head-side"></div><div class="itl-daywrap" style="${gridColsStyle}">${dayHtml}</div></div>`;
+  if(todayIdxInMonth>=0){
+    html += `<div class="itl-today-line" style="left:${SIDEW + (todayIdxInMonth-1)*COLW + COLW/2}px"></div>`;
+  }
+
+  // 그룹 (상품별)
+  const groups = getOrderedProductList();
+  groups.forEach((prod,gi)=>{
+    const camps = CAMPS.filter(c=> (c.products||[]).includes(prod) && c.start && c.end && c.start<=monthEnd && c.end>=monthStart)
+      .sort((a,b)=> (a.start||'').localeCompare(b.start||''));
+
+    // 겹치는 캠페인끼리 레인(줄) 나누기
+    const lanes = []; // 각 레인의 마지막 종료일
+    camps.forEach(c=>{
+      const cs = c.start < monthStart ? monthStart : c.start;
+      const ce = c.end > monthEnd ? monthEnd : c.end;
+      let li = lanes.findIndex(end => cs > end);
+      if(li===-1){ lanes.push(ce); li = lanes.length-1; } else { lanes[li] = ce; }
+      c._tlLane = li; c._tlStart = cs; c._tlEnd = ce;
+    });
+    const numLanes = Math.max(lanes.length, 1);
+
+    let lanesHtml = '';
+    if(!camps.length){
+      lanesHtml = `<div class="itl-lane" style="min-height:32px"><div class="itl-empty-row">이번 달 진행 내역 없음</div></div>`;
+    } else {
+      for(let li=0; li<numLanes; li++){
+        let bg = '';
+        for(let d=1; d<=numDays; d++){
+          const dow = new Date(tlYear, tlMonth, d).getDay();
+          bg += `<div class="itl-daycolbg${(dow===0||dow===6)?' we':''}" style="grid-column:${d} / ${d+1};grid-row:1"></div>`;
+        }
+        let bars = '';
+        camps.filter(c=>c._tlLane===li).forEach(c=>{
+          const startD = parseInt(c._tlStart.split('-')[2],10);
+          const endD = parseInt(c._tlEnd.split('-')[2],10);
+          const statusCls = c.end < todayStr ? 'past' : (c.start > todayStr ? 'upcoming' : 'live');
+          const name = c.campaign || c.client || '(이름 없음)';
+          const cliLabel = (c.client && c.client!==c.campaign) ? c.client : '';
+          const titleTxt = (name+(cliLabel?' · '+cliLabel:'')+' ('+c.start+' ~ '+c.end+')').replace(/"/g,'&quot;');
+          bars += `<div class="itl-bar ${statusCls}" style="grid-column:${startD} / ${endD+1}" title="${titleTxt}" onclick="openReport('${c.id}')">${name}${cliLabel?`<span class="cli">${cliLabel}</span>`:''}</div>`;
+        });
+        lanesHtml += `<div class="itl-lane" style="${gridColsStyle}">${bg}${bars}</div>`;
+      }
+    }
+
+    html += `<div class="itl-group">
+      <div class="itl-group-side">${gi+1}. ${prod}<span class="itl-group-ct">${camps.length}건</span></div>
+      <div class="itl-group-lanes">${lanesHtml}</div>
+    </div>`;
+  });
+
+  grid.innerHTML = html;
 }
 
 // ════════════════════════════════════
